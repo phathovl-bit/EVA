@@ -1,0 +1,824 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVA - Lộ Trình Cá Nhân</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>window.MathJax={loader:{load:["[tex]/mhchem"]},tex:{packages:{"[+]":["mhchem"]},inlineMath:[["$","$"],["\\(","\\)"]],displayMath:[["$$","$$"],["\\[","\\]"]]},startup:{typeset:false}};</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:["Inter","sans-serif"]},colors:{eva:{dark:"#0f172a",panel:"#1e293b",border:"#334155",blue:"#3b82f6",purple:"#8b5cf6",neon:"#60a5fa"}}}}}</script>
+<style>
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0f172a}::-webkit-scrollbar-thumb{background:#334155;border-radius:10px}
+.glass-panel{background:rgba(30,41,59,0.7);backdrop-filter:blur(10px);border:1px solid rgba(51,65,85,0.5)}
+.tab-content{display:none;animation:fadeIn 0.3s ease-in-out}.tab-content.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.typing-dot{animation:typing 1.4s infinite ease-in-out both}.typing-dot:nth-child(1){animation-delay:-0.32s}.typing-dot:nth-child(2){animation-delay:-0.16s}
+@keyframes typing{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+.markdown-content p{margin-bottom:0.5rem}.markdown-content strong{color:#f8fafc;font-weight:600}
+.markdown-content ul{list-style-type:disc;margin-left:1.5rem;margin-bottom:0.75rem}
+.markdown-content ol{list-style-type:decimal;margin-left:1.5rem;margin-bottom:0.75rem}
+.markdown-content li{margin-bottom:0.25rem}
+.markdown-content code{background-color:rgba(255,255,255,0.1);padding:0.1rem 0.3rem;border-radius:0.25rem;font-family:monospace;color:#93c5fd}
+.markdown-content pre{background-color:rgba(0,0,0,0.3);padding:0.75rem;border-radius:0.5rem;overflow-x:auto;margin-bottom:0.75rem;border:1px solid rgba(255,255,255,0.1)}
+.markdown-content h3,.markdown-content h4{font-weight:bold;color:#fff;margin-top:1rem;margin-bottom:0.5rem}
+.chat-menu-dropdown{animation:menuPop 0.2s ease-out;z-index:100;box-shadow:0 10px 25px -5px rgba(0,0,0,0.5)}
+@keyframes menuPop{from{opacity:0;transform:scale(0.95) translateY(-5px)}to{opacity:1;transform:scale(1) translateY(0)}}
+</style>
+<style id="rm-dynamic-theme">
+/* Dynamic theme overrides applied via JS CSS vars */
+body[data-rm-theme] { background-color: var(--rm-bg) !important; color: var(--rm-text) !important; }
+body[data-rm-theme] .glass-panel { background: var(--rm-card) !important; border-color: var(--rm-border) !important; }
+body[data-rm-theme] aside { background: var(--rm-panel) !important; border-color: var(--rm-border) !important; }
+body[data-rm-theme] header { background: var(--rm-card) !important; border-color: var(--rm-border) !important; }
+body[data-rm-theme] input, body[data-rm-theme] select, body[data-rm-theme] textarea { background: var(--rm-input) !important; color: var(--rm-text) !important; border-color: var(--rm-border) !important; }
+body[data-rm-theme] .bg-eva-blue { background-color: var(--rm-btn) !important; }
+body[data-rm-theme] .bg-eva-panel { background: var(--rm-panel) !important; }
+body[data-rm-theme] .bg-eva-dark { background: var(--rm-bg) !important; }
+body[data-rm-theme] .border-eva-border { border-color: var(--rm-border) !important; }
+body[data-rm-theme] .text-eva-neon { color: var(--rm-accent2) !important; }
+body[data-rm-theme] .text-eva-blue { color: var(--rm-btn) !important; }
+body[data-rm-theme] .bg-gray-800, body[data-rm-theme] .bg-gray-900\/40 { background-color: var(--rm-input) !important; }
+body[data-rm-theme] .border-gray-700\/60, body[data-rm-theme] .border-gray-600 { border-color: var(--rm-border) !important; }
+body[data-rm-theme] .bg-blue-600\/80 { background-color: var(--rm-btn) !important; opacity: 0.85; }
+body[data-rm-theme][data-rm-theme="light"] .text-gray-200,
+body[data-rm-theme][data-rm-theme="light"] .text-gray-300,
+body[data-rm-theme][data-rm-theme="light"] .text-gray-400 { color: var(--rm-text-soft) !important; }
+body[data-rm-theme][data-rm-theme="light"] .text-white { color: var(--rm-text) !important; }
+/* Accent colors for buttons */
+body[data-rm-theme] .bg-gradient-to-br.from-eva-blue { background: linear-gradient(135deg, var(--rm-accent2), var(--rm-accent)) !important; }
+body[data-rm-theme] .from-indigo-500 { --tw-gradient-from: var(--rm-accent) !important; }
+</style></head>
+<script>
+// ====== EVA THEME SYNC ======
+const EVA_THEME_KEY = 'eva_settings_theme_v1';
+const EVA_LEGACY_THEME_KEY = 'eva_theme_mode_v1';
+const EVA_AUTH_KEY = 'eva_auth_session_v1';
+
+const THEME_VARS = {
+  dark:   {'--rm-bg':'#0f172a','--rm-panel':'#1e293b','--rm-border':'rgba(51,65,85,0.5)','--rm-accent':'#6c63ff','--rm-accent2':'#3b82f6','--rm-text':'#f1f5f9','--rm-text-soft':'#94a3b8','--rm-card':'rgba(30,41,59,0.7)','--rm-input':'#1e293b','--rm-btn':'#3b82f6'},
+  light:  {'--rm-bg':'#f5f6fb','--rm-panel':'#ffffff','--rm-border':'rgba(0,0,0,0.1)','--rm-accent':'#6c63ff','--rm-accent2':'#2563eb','--rm-text':'#111827','--rm-text-soft':'#4b5563','--rm-card':'rgba(255,255,255,0.9)','--rm-input':'#f3f4f6','--rm-btn':'#2563eb'},
+  golden: {'--rm-bg':'#1a1500','--rm-panel':'#241e00','--rm-border':'rgba(212,175,55,0.3)','--rm-accent':'#d4af37','--rm-accent2':'#f59e0b','--rm-text':'#fef9e7','--rm-text-soft':'#d4c57a','--rm-card':'rgba(36,30,0,0.8)','--rm-input':'#2a2200','--rm-btn':'#d4af37'},
+  ocean:  {'--rm-bg':'#001a2c','--rm-panel':'#002340','--rm-border':'rgba(0,180,216,0.3)','--rm-accent':'#00b4d8','--rm-accent2':'#0096c7','--rm-text':'#e0f7ff','--rm-text-soft':'#90e0ef','--rm-card':'rgba(0,35,64,0.8)','--rm-input':'#002e52','--rm-btn':'#0096c7'},
+  sakura: {'--rm-bg':'#1a0010','--rm-panel':'#2a0018','--rm-border':'rgba(255,105,180,0.3)','--rm-accent':'#ff69b4','--rm-accent2':'#e91e8c','--rm-text':'#fff0f6','--rm-text-soft':'#ffb3d1','--rm-card':'rgba(42,0,24,0.8)','--rm-input':'#35001f','--rm-btn':'#e91e8c'},
+  forest: {'--rm-bg':'#0a1a0a','--rm-panel':'#102010','--rm-border':'rgba(34,139,34,0.3)','--rm-accent':'#22c55e','--rm-accent2':'#16a34a','--rm-text':'#f0fdf4','--rm-text-soft':'#86efac','--rm-card':'rgba(16,32,16,0.8)','--rm-input':'#143014','--rm-btn':'#16a34a'},
+  candy:  {'--rm-bg':'#0d001a','--rm-panel':'#180026','--rm-border':'rgba(200,100,255,0.3)','--rm-accent':'#c864ff','--rm-accent2':'#a855f7','--rm-text':'#fdf4ff','--rm-text-soft':'#e879f9','--rm-card':'rgba(24,0,38,0.8)','--rm-input':'#200030','--rm-btn':'#a855f7'},
+  sunset: {'--rm-bg':'#1a0800','--rm-panel':'#2a1000','--rm-border':'rgba(255,120,50,0.3)','--rm-accent':'#ff7832','--rm-accent2':'#f97316','--rm-text':'#fff7ed','--rm-text-soft':'#fed7aa','--rm-card':'rgba(42,16,0,0.8)','--rm-input':'#341500','--rm-btn':'#f97316'}
+};
+
+function applyRoadmapTheme(theme) {
+  var t = String(theme || 'dark').toLowerCase();
+  var vars = THEME_VARS[t] || THEME_VARS['dark'];
+  var root = document.documentElement;
+  for (var k in vars) root.style.setProperty(k, vars[k]);
+  // Also update Tailwind eva-* colors dynamically via CSS vars
+  document.body.setAttribute('data-rm-theme', t);
+}
+
+function loadRoadmapTheme() {
+  try {
+    var t = localStorage.getItem(EVA_THEME_KEY) || localStorage.getItem(EVA_LEGACY_THEME_KEY) || 'dark';
+    applyRoadmapTheme(t);
+  } catch(e) { applyRoadmapTheme('dark'); }
+}
+
+// Listen for theme changes from parent EVA 1
+window.addEventListener('storage', function(e) {
+  if (e.key === EVA_THEME_KEY || e.key === EVA_LEGACY_THEME_KEY) {
+    applyRoadmapTheme(e.newValue || 'dark');
+  }
+});
+
+// Also poll every 2s in case storage event doesn't fire (same-origin iframe edge case)
+var _lastTheme = '';
+setInterval(function() {
+  try {
+    var t = localStorage.getItem(EVA_THEME_KEY) || localStorage.getItem(EVA_LEGACY_THEME_KEY) || 'dark';
+    if (t !== _lastTheme) { _lastTheme = t; applyRoadmapTheme(t); }
+  } catch(e) {}
+}, 2000);
+
+// ====== EVA AUTH SYNC ======
+function loadRoadmapAuth() {
+  try {
+    var session = JSON.parse(localStorage.getItem(EVA_AUTH_KEY) || 'null');
+    var usernameEl = document.getElementById('sidebar-username');
+    var avatarEl = document.getElementById('sidebar-avatar');
+    var roleEl = document.getElementById('sidebar-role-badge');
+    var headerEl = document.getElementById('header-username');
+    if (session && session.username) {
+      var name = session.username || 'Người dùng';
+      var role = session.role || 'user';
+      var initials = name.substring(0,2).toUpperCase();
+      if (usernameEl) usernameEl.innerText = name;
+      if (avatarEl) { avatarEl.innerText = initials; avatarEl.style.background = role==='admin'?'linear-gradient(135deg,#7c3aed,#4f46e5)':'linear-gradient(135deg,#3b82f6,#6c63ff)'; }
+      if (roleEl) { roleEl.innerText = role==='admin'?'Quản trị viên':'Học sinh'; roleEl.style.color = role==='admin'?'#a78bfa':'#34d399'; }
+      if (headerEl) headerEl.innerText = name + (role==='admin'?' (Admin)':'');
+    } else {
+      if (usernameEl) usernameEl.innerText = 'Khách';
+      if (avatarEl) { avatarEl.innerText = '?'; avatarEl.style.background = '#374151'; }
+      if (roleEl) { roleEl.innerText = 'Chưa đăng nhập'; roleEl.style.color = '#9ca3af'; }
+      if (headerEl) headerEl.innerText = 'Khách';
+    }
+  } catch(e) {}
+}
+
+// Listen for auth changes
+window.addEventListener('storage', function(e) {
+  if (e.key === EVA_AUTH_KEY) loadRoadmapAuth();
+});
+
+// Init both on load
+document.addEventListener('DOMContentLoaded', function() {
+  loadRoadmapTheme();
+  loadRoadmapAuth();
+});
+</script><body class="bg-eva-dark text-gray-200 font-sans h-screen overflow-hidden flex">
+<aside id="app-sidebar" class="w-20 md:w-64 glass-panel border-r border-eva-border flex flex-col transition-all duration-300 z-20 relative">
+  <div class="h-20 flex items-center justify-center md:justify-between px-0 md:px-4 border-b border-eva-border">
+    <div class="flex items-center justify-center">
+    <button onclick="try{window.parent.switchPage('chatbot');}catch(e){}" title="Quay về EVA chính" style="display:flex;align-items:center;background:none;border:none;cursor:pointer;padding:0;opacity:1;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+      <img src="logo.png" alt="EVA" class="w-10 h-10 rounded-xl object-cover shadow-[0_0_15px_rgba(108,99,255,0.5)]">
+      <span class="hidden md:block ml-3 font-bold text-xl tracking-wider text-white" style="font-family:Orbitron,sans-serif;">EVA<span style="color:var(--eva-accent,#6c63ff)">.AI</span></span>
+    </button>
+    </div>
+    <button onclick="toggleSidebar()" class="hidden md:flex text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition-colors" title="Đóng sidebar">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+    </button>
+  </div>
+  <nav class="flex-1 py-6 flex flex-col px-3 overflow-y-auto">
+    <div class="flex flex-col gap-2">
+      <button onclick="switchTab('profile')" id="btn-profile" class="nav-btn active flex items-center p-3 rounded-lg bg-eva-blue/20 text-eva-neon border border-eva-blue/30 transition-all">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+        <span class="hidden md:block ml-3 font-medium">Cá Nhân Hóa</span>
+      </button>
+      <button onclick="openNewFreeChat()" id="btn-theory" class="nav-btn flex items-center p-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        <span class="hidden md:block ml-3 font-medium">Cuộc trò chuyện mới</span>
+      </button>
+      <button onclick="switchTab('exercise')" id="btn-exercise" class="nav-btn flex items-center p-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        <span class="hidden md:block ml-3 font-medium">Giải Bài Tập</span>
+      </button>
+    </div>
+    <div class="mt-6 pt-4 border-t border-eva-border flex-1">
+      <div class="text-[10px] font-bold text-gray-500 mb-2 px-3 uppercase tracking-wider hidden md:block">Phòng Học (Lịch sử)</div>
+      <div id="sidebar-chat-history" class="flex flex-col gap-1"></div>
+    </div>
+  </nav>
+  <div class="p-4 border-t border-eva-border flex items-center justify-center md:justify-start">
+    <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold shrink-0" id="sidebar-avatar">?</div>
+    <div class="hidden md:block ml-3 truncate"><div class="text-sm font-semibold text-white" id="sidebar-username">Khách</div><div class="text-xs" id="sidebar-role-badge">Chưa đăng nhập</div></div>
+  </div>
+</aside>
+<main class="flex-1 relative overflow-hidden flex flex-col">
+  <header class="h-20 glass-panel border-b border-eva-border flex items-center justify-between px-4 md:px-6 z-10">
+    <div class="flex items-center gap-3">
+      <button id="main-sidebar-toggle-btn" onclick="toggleSidebar()" class="hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-800 transition-colors" title="Mở sidebar">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      </button>
+      <div><h2 class="text-lg font-bold text-white" id="header-title">Hồ sơ: DẤU VÂN TAY TƯ DUY</h2><div class="text-xs text-gray-400 mt-1" id="header-subtitle">Trọng tâm: Chưa chọn</div></div>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="summarize-chat-btn" onclick="summarizeChatHistory()" class="hidden bg-eva-purple/20 hover:bg-eva-purple text-purple-300 hover:text-white border border-purple-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1.5">✨ Tóm tắt bài học</button>
+      <div class="hidden md:flex items-center gap-2" id="header-user-info"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span><span class="text-sm text-gray-300" id="header-username">Khach</span></div>
+    </div>
+  </header>
+  <div class="flex-1 overflow-y-auto p-4 md:p-6 relative">
+    <!-- TAB THEORY -->
+    <div id="tab-theory" class="tab-content flex-col h-full max-w-4xl mx-auto">
+      <div class="flex-1 overflow-y-auto space-y-6 pb-20 pr-2 relative" id="chat-wrapper">
+        <div id="chat-container-default" class="chat-container-instance space-y-6"></div>
+      </div>
+      <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-eva-dark to-transparent z-20">
+        <div id="image-preview-container" class="hidden mb-2 relative w-24 h-24 bg-gray-800 rounded-lg border border-gray-600 flex items-center justify-center group ml-4 md:ml-auto md:max-w-4xl mx-auto">
+          <img id="image-preview" src="" class="max-w-full max-h-full rounded object-contain">
+          <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 text-xs flex items-center justify-center text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+        </div>
+        <div class="max-w-4xl mx-auto flex gap-3 items-end">
+          <label for="image-upload" class="cursor-pointer bg-eva-panel border border-eva-border p-3 rounded-xl hover:bg-eva-purple/20 transition-colors shadow-lg flex-shrink-0 h-[46px] flex items-center justify-center text-gray-400 hover:text-purple-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </label>
+          <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+          <input type="text" id="chat-input" placeholder="Nhập câu hỏi hoặc tải ảnh lên..." class="flex-1 bg-eva-panel border border-eva-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-eva-blue shadow-lg text-white" onkeypress="handleChatEnter(event)">
+          <button onclick="sendChatMessage()" class="bg-eva-blue hover:bg-blue-500 text-white p-3 rounded-xl transition-colors shadow-lg flex-shrink-0 h-[46px] flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- TAB EXERCISE -->
+    <div id="tab-exercise" class="tab-content flex-col max-w-3xl mx-auto w-full pt-4">
+      <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2"><svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Đấu trường Phản xạ</h3>
+      <div id="exercise-container" class="glass-panel rounded-2xl p-6 border border-eva-border shadow-xl">
+        <div class="text-center py-10">
+          <p class="text-gray-400 mb-6 text-sm">Hãy yêu cầu bài tập từ <strong class="text-eva-neon">Kế Hoạch Học Tập</strong>, hoặc để EVA tạo ngẫu nhiên!</p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button onclick="switchTab('profile'); switchProfileSubTab('kehoach');" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2.5 rounded-xl transition-all text-sm font-semibold border border-gray-600">Đến Kế Hoạch Học Tập</button>
+            <button onclick="generateDynamicExercise('tổng hợp')" class="bg-eva-blue hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl transition-all text-sm font-semibold flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Tạo Bài Tập Ngẫu Nhiên
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="deep-dive-btn-container" class="mt-6 hidden text-center">
+        <button onclick="generateDeepDive()" id="btn-deep-dive" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all transform hover:scale-105">✨ Nhờ EVA Tạo Thử Thách Bẻ Lái Tư Duy</button>
+      </div>
+      <div id="deep-dive" class="mt-6 glass-panel rounded-2xl p-6 border border-orange-500/50 hidden">
+        <h4 class="text-orange-400 font-bold mb-3 flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>EVA Bẻ Lái Tư Duy</h4>
+        <div id="deep-dive-text" class="text-sm text-gray-200 mb-4 markdown-content"></div>
+        <textarea placeholder="Nhập suy luận của bạn..." class="w-full bg-eva-dark border border-eva-border rounded-xl p-3 text-sm focus:outline-none focus:border-orange-500 text-white resize-none" rows="3"></textarea>
+        <button class="mt-3 w-full bg-orange-600 hover:bg-orange-500 text-white py-2 rounded-lg text-sm font-bold transition-colors">Gửi Phản Biện</button>
+      </div>
+    </div>
+    <!-- TAB PROFILE -->
+    <div id="tab-profile" class="tab-content active flex-col w-full h-full max-w-5xl mx-auto">
+      <div class="flex justify-center mb-6">
+        <div class="bg-eva-panel border border-eva-border rounded-full p-1 flex">
+          <button onclick="switchProfileSubTab('hoso')" id="btn-sub-hoso" class="px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md">Hồ sơ người học</button>
+          <button onclick="switchProfileSubTab('kehoach')" id="btn-sub-kehoach" class="px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">Lên kế hoạch học tập</button>
+        </div>
+      </div>
+      <!-- SUB-TAB HỒ SƠ -->
+      <div id="sub-hoso" class="block w-full">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6">
+          <div class="col-span-1 md:col-span-2 glass-panel rounded-2xl p-6 border border-eva-border flex flex-col relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-eva-blue opacity-10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+            <h3 class="text-lg font-bold text-white mb-1">Radar Năng Lực Học Tập</h3>
+            <p class="text-sm text-gray-400 mb-6">AI EVA phân tích dựa trên lịch sử tương tác.</p>
+            <div class="flex-1 flex items-center justify-center relative min-h-[300px]"><canvas id="radarChart"></canvas></div>
+          </div>
+          <div class="space-y-6 flex flex-col">
+            <div class="glass-panel rounded-2xl p-6 border border-eva-border">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider">Nhãn Tư Duy</h3>
+                <button onclick="analyzeLearningStyle()" id="btn-analyze" class="text-xs bg-eva-purple hover:bg-purple-500 text-white px-2 py-1 rounded transition-colors">✨ Quét Dữ Liệu</button>
+              </div>
+              <div id="tags-container" class="flex flex-wrap gap-2"><span class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-lg text-xs">Chưa có dữ liệu.</span></div>
+            </div>
+            <div class="glass-panel rounded-2xl p-6 border border-eva-border flex-1 flex flex-col">
+              <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider mb-4">Chỉ số sinh học</h3>
+              <div class="space-y-4 mb-6">
+                <div>
+                  <div class="flex justify-between text-sm mb-1"><span class="text-gray-300">Sức bền tập trung</span><span class="text-eva-neon font-bold" id="bio-focus-text">0%</span></div>
+                  <div class="w-full bg-gray-800 rounded-full h-2"><div id="bio-focus-bar" class="bg-eva-neon h-2 rounded-full transition-all duration-1000" style="width:0%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm mb-1"><span class="text-gray-300">Tốc độ phản xạ</span><span class="text-purple-400 font-bold" id="bio-reflex-text">0%</span></div>
+                  <div class="w-full bg-gray-800 rounded-full h-2"><div id="bio-reflex-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-1000" style="width:0%"></div></div>
+                </div>
+              </div>
+              <div class="flex-1 bg-gradient-to-br from-orange-900/30 to-red-900/10 border border-orange-500/30 rounded-xl p-5 text-center relative overflow-hidden">
+                <div class="flex items-center justify-center gap-2 mb-3"><span class="font-bold text-orange-400 text-sm tracking-wide">EVA NHẬN ĐỊNH</span></div>
+                <p id="eva-insight" class="text-sm text-gray-300 italic leading-relaxed">"Hãy chat với EVA để có dữ liệu phân tích."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- SUB-TAB KẾ HOẠCH -->
+      <div id="sub-kehoach" class="hidden w-full">
+        <div class="glass-panel rounded-2xl p-6 border border-eva-border mb-10">
+          <div class="flex justify-between items-center mb-4 border-b border-eva-border pb-4">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2"><svg class="w-5 h-5 text-eva-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Cài Đặt Mục Tiêu & Kế Hoạch</h3>
+          </div>
+          <div class="flex flex-col md:flex-row gap-4 mb-6 bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+            <div class="flex-1">
+              <label class="block text-xs text-gray-400 mb-2 uppercase font-bold tracking-wider">1. Chọn Môn Học:</label>
+              <select id="subject-selector" onchange="changeSubject()" class="w-full bg-eva-dark border border-eva-border text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-eva-blue cursor-pointer">
+                <option value="" disabled selected>-- Chọn môn học --</option>
+                <option value="Hóa học">Hóa học</option>
+                <option value="Toán học">Toán học</option>
+                <option value="Vật lý">Vật lý</option>
+                <option value="Sinh học">Sinh học</option>
+                <option value="Tin học">Tin học</option>
+              </select>
+            </div>
+            <div class="flex-1">
+              <label class="block text-xs text-gray-400 mb-2 uppercase font-bold tracking-wider">2. Nguồn Kiến Thức:</label>
+              <button onclick="openKnowledgeModal()" class="w-full bg-eva-purple/10 hover:bg-eva-purple/20 text-purple-300 border border-purple-500/30 text-sm rounded-lg px-3 py-2.5 transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span id="knowledge-status">Chưa nạp. Nhấn để nạp tài liệu</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col md:flex-row gap-3 mb-4">
+            <input type="text" id="plan-goal" placeholder="3. Nhập mục tiêu (VD: Đạt 9+ môn Hóa...)" class="flex-1 bg-eva-dark border border-eva-border rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-eva-blue">
+            <button onclick="generateStudyPlan()" id="btn-plan" class="bg-gradient-to-r from-eva-blue to-eva-purple hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-6 rounded-xl text-sm whitespace-nowrap">✨ Lên Kế Hoạch</button>
+          </div>
+          <div id="plan-loading" class="hidden bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-sm text-gray-200 mb-4">
+            <div class="flex items-center gap-2 text-eva-neon">
+              <span class="typing-dot w-2 h-2 bg-eva-neon rounded-full"></span><span class="typing-dot w-2 h-2 bg-eva-neon rounded-full"></span><span class="typing-dot w-2 h-2 bg-eva-neon rounded-full"></span>
+              EVA đang phân tích và tính toán lộ trình...
+            </div>
+          </div>
+          <div id="plans-container" class="w-full flex flex-col gap-6"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<!-- MODALS -->
+<div id="knowledge-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+  <div class="bg-eva-panel border border-eva-border rounded-2xl p-6 w-full max-w-2xl shadow-2xl mx-4">
+    <h3 class="text-xl font-bold text-white mb-2">Nạp Dữ Liệu Bài Học</h3>
+    <p class="text-sm text-gray-400 mb-4">Dán nội dung sách giáo khoa hoặc đề cương để EVA bám sát giảng dạy.</p>
+    <textarea id="knowledge-input" rows="8" class="w-full bg-eva-dark border border-eva-border rounded-xl p-4 text-sm text-gray-200 focus:outline-none focus:border-eva-blue resize-none mb-4" placeholder="Dán nội dung tại đây..."></textarea>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeKnowledgeModal()" class="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">Hủy</button>
+      <button onclick="loadKnowledge()" class="px-4 py-2 bg-eva-blue hover:bg-blue-500 rounded-lg text-sm font-bold text-white">Nạp & Bắt Đầu Học</button>
+    </div>
+  </div>
+</div>
+<div id="rename-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+  <div class="bg-eva-panel border border-eva-border rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4">
+    <h3 class="text-lg font-bold text-white mb-2">Đổi Tên Đoạn Chat</h3>
+    <div class="flex justify-between items-center mb-4"><p class="text-sm text-gray-400">Nhập tên mới.</p><button onclick="suggestChatName()" id="btn-suggest-name" class="text-xs bg-eva-purple/20 hover:bg-eva-purple text-purple-400 hover:text-white px-2 py-1 rounded transition-all border border-purple-500/30">✨ AI Gợi ý</button></div>
+    <input type="text" id="rename-input" class="w-full bg-eva-dark border border-eva-border rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-eva-blue mb-4" placeholder="Nhập tên mới..." onkeypress="if(event.key==='Enter')saveRenameChat()">
+    <div class="flex justify-end gap-3">
+      <button onclick="closeRenameModal()" class="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800">Hủy</button>
+      <button onclick="saveRenameChat()" class="px-4 py-2 bg-eva-blue hover:bg-blue-500 rounded-lg text-sm font-bold text-white">Lưu Tên</button>
+    </div>
+  </div>
+</div>
+<div id="alert-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+  <div class="bg-eva-panel border border-eva-border rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4 text-center">
+    <h3 id="alert-title" class="text-lg font-bold text-white mb-2">Thông báo</h3>
+    <p id="alert-message" class="text-sm text-gray-400 mb-6"></p>
+    <div id="alert-actions"><button onclick="closeAlertModal()" class="px-6 py-2 bg-eva-blue hover:bg-blue-500 rounded-lg text-sm font-bold text-white">Đã hiểu</button></div>
+  </div>
+</div>
+<script>
+// GLOBAL STATE
+const EVA_WORKER = "https://eva1.phatho-vl.workers.dev/chat";
+const RM_STATE_KEY = 'eva_roadmap_state_v2';
+let chatHistories={"default":[]},chatSubjects={"default":""},chatCustomNames={},currentChatId="default";
+let currentSubject="",customKnowledge="",activeDays={},radarChartInstance=null,confirmCallback=null,currentRenameChatId=null,openMenuId=null;
+let currentUploadedImageBase64=null,currentUploadedImageMimeType=null,currentExerciseData=null;
+
+// ====== LOCALSTORAGE PERSISTENCE ======
+function saveRoadmapState() {
+  try {
+    const trimmedHistories = {};
+    Object.keys(chatHistories).forEach(k => {
+      trimmedHistories[k] = (chatHistories[k] || []).slice(-20);
+    });
+    const state = {
+      v: 2,
+      currentSubject,
+      chatSubjects,
+      chatCustomNames,
+      activeDays,
+      chatHistories: trimmedHistories,
+      plansHtml: document.getElementById('plans-container')?.innerHTML || '',
+      tags: document.getElementById('tags-container')?.innerHTML || '',
+      insight: document.getElementById('eva-insight')?.innerHTML || '',
+      radarData: radarChartInstance?.data?.datasets?.[0]?.data || [0,0,0,0,0],
+      focusVal: document.getElementById('bio-focus-text')?.innerText || '0%',
+      reflexVal: document.getElementById('bio-reflex-text')?.innerText || '0%',
+      savedAt: Date.now()
+    };
+    localStorage.setItem(RM_STATE_KEY, JSON.stringify(state));
+  } catch(e) {}
+}
+
+function loadRoadmapState() {
+  try {
+    const raw = localStorage.getItem(RM_STATE_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s || s.v !== 2) return false;
+    // Restore global state
+    if (s.currentSubject) currentSubject = s.currentSubject;
+    if (s.chatSubjects) chatSubjects = s.chatSubjects;
+    if (s.chatCustomNames) chatCustomNames = s.chatCustomNames;
+    if (s.activeDays) activeDays = s.activeDays;
+    if (s.chatHistories) chatHistories = s.chatHistories;
+    else chatHistories = {"default":[]};
+    return s;
+  } catch(e) { return false; }
+}
+
+function restoreRoadmapUI(s) {
+  if (!s) return;
+  // Subject selector
+  if (s.currentSubject) {
+    const sel = document.getElementById('subject-selector');
+    if (sel) sel.value = s.currentSubject;
+    document.getElementById('header-subtitle').innerText = 'Trọng tâm: ' + s.currentSubject;
+  }
+  // Plans
+  if (s.plansHtml) {
+    const pc = document.getElementById('plans-container');
+    if (pc) pc.innerHTML = s.plansHtml;
+  }
+  // Tags & Insight
+  if (s.tags) { const el = document.getElementById('tags-container'); if(el) el.innerHTML = s.tags; }
+  if (s.insight) { const el = document.getElementById('eva-insight'); if(el) el.innerHTML = s.insight; }
+  // Radar
+  if (s.radarData && radarChartInstance) {
+    radarChartInstance.data.datasets[0].data = s.radarData;
+    radarChartInstance.update();
+  }
+  // Bio metrics
+  if (s.focusVal) {
+    const ft = document.getElementById('bio-focus-text'), fb = document.getElementById('bio-focus-bar');
+    if(ft) ft.innerText = s.focusVal;
+    if(fb) fb.style.width = s.focusVal;
+  }
+  if (s.reflexVal) {
+    const rt = document.getElementById('bio-reflex-text'), rb = document.getElementById('bio-reflex-bar');
+    if(rt) rt.innerText = s.reflexVal;
+    if(rb) rb.style.width = s.reflexVal;
+  }
+  updateSidebarHistory();
+}
+
+window.onload=()=>{
+  // Load saved state FIRST before initChat
+  const savedState = loadRoadmapState();
+  initRadarChart([0,0,0,0,0]); window.chartInitialized = true;
+  if (savedState && savedState.currentSubject) {
+    // Restore with saved subject
+    initChat(savedState.currentSubject);
+    restoreRoadmapUI(savedState);
+  } else {
+    document.getElementById('header-subtitle').innerText = 'Trọng tâm: Chưa chọn';
+    initChat(currentSubject);
+    updateSidebarHistory();
+  }
+  // Auto-save every 30s
+  setInterval(saveRoadmapState, 30000);
+  window.addEventListener('click',(e)=>{ if(openMenuId&&!e.target.closest('.chat-menu-dropdown')&&!e.target.closest('button[onclick^="toggleChatMenu"]')) closeAllChatMenus(); });
+};
+
+window.alert=function(msg){showCustomAlert(msg,"Thông báo");};
+
+async function fetchGeminiAPI(payload,retries=3){
+  const isJson=payload.generationConfig?.responseMimeType==="application/json";
+  const sysText=payload.systemInstruction?.parts?.[0]?.text||"";
+  let prompt=payload.contents?.map(c=>c.parts?.map(p=>p.inlineData?"[Hình ảnh]":(p.text||"")).join("")).join("\n")||"";
+  if(sysText)prompt=sysText+"\n\n"+prompt;
+  if(isJson)prompt+="\n\nTRẢ VỀ CHỈ JSON hợp lệ, không markdown, không giải thích.";
+  for(let i=0;i<retries;i++){
+    try{
+      const r=await fetch(EVA_WORKER,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,model:"gemini-3.1-flash-lite-preview",role:"user",task:"chat"})});
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      const d=await r.json();
+      let t=d?.text??d?.response??d?.output??d?.message??"";
+      if(isJson){const m=t.match(/```json\s*([\s\S]*?)```/)||t.match(/([\[{][\s\S]*[\]}])/);if(m)t=m[1]||m[0];}
+      return t||"Không có phản hồi.";
+    }catch(e){if(i===retries-1)return"Lỗi kết nối. Hãy thử lại sau!";await new Promise(r=>setTimeout(r,1000*(i+1)));}
+  }
+}
+
+function showCustomAlert(message,title="Thông báo",isConfirm=false,onConfirm=null){
+  const t=document.getElementById("alert-title");if(t)t.innerText=title;
+  const m=document.getElementById("alert-message");if(m)m.innerHTML=message.replace(/\n/g,"<br>");
+  const a=document.getElementById("alert-actions");
+  if(isConfirm){confirmCallback=onConfirm;a.innerHTML=`<button onclick="closeAlertModal()" class="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800">Hủy</button><button onclick="executeConfirm()" class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-bold text-white ml-3">Xác nhận</button>`;}
+  else{a.innerHTML=`<button onclick="closeAlertModal()" class="px-6 py-2 bg-eva-blue hover:bg-blue-500 rounded-lg text-sm font-bold text-white">Đã hiểu</button>`;}
+  document.getElementById("alert-modal").classList.remove("hidden");
+}
+function closeAlertModal(){document.getElementById("alert-modal").classList.add("hidden");confirmCallback=null;}
+function executeConfirm(){if(confirmCallback)confirmCallback();closeAlertModal();}
+
+function parseMarkdownWithMath(text){
+  if(!text)return"";let mb=[];
+  let p=text.replace(/\$\$(.*?)\$\$/g,m=>{mb.push(m);return`@@MB_${mb.length-1}@@`;});
+  p=p.replace(/\$(.*?)\$/g,m=>{mb.push(m);return`@@MI_${mb.length-1}@@`;});
+  marked.setOptions({breaks:true,gfm:true});
+  let h=marked.parse(p);
+  h=h.replace(/@@MB_(\d+)@@/g,(_,i)=>mb[i]);h=h.replace(/@@MI_(\d+)@@/g,(_,i)=>mb[i]);
+  return h;
+}
+
+function toggleSidebar(){
+  const s=document.getElementById("app-sidebar"),b=document.getElementById("main-sidebar-toggle-btn");
+  if(s.style.display==="none"){s.style.display="flex";b.classList.add("hidden");b.classList.remove("flex");}
+  else{s.style.display="none";b.classList.remove("hidden");b.classList.add("flex");}
+}
+
+function toggleChatMenu(id,e){e.stopPropagation();if(openMenuId===id)closeAllChatMenus();else{closeAllChatMenus();openMenuId=id;const m=document.getElementById("menu-dropdown-"+id);if(m)m.classList.remove("hidden");}}
+function closeAllChatMenus(){document.querySelectorAll(".chat-menu-dropdown").forEach(e=>e.classList.add("hidden"));openMenuId=null;}
+
+function deleteChatFromMenu(id,e){
+  e.stopPropagation();closeAllChatMenus();
+  if(id==="default"){showCustomAlert("Bạn có muốn xóa lịch sử Chat Tự Do?","Xóa lịch sử",true,()=>{chatHistories["default"]=[];const c=document.getElementById("chat-container-default");if(c)c.innerHTML="";initChat(currentSubject);});}
+  else removePlan(id);
+}
+
+async function suggestChatName(){
+  const id=currentRenameChatId;
+  if(!id||!chatHistories[id]||chatHistories[id].length<2){showCustomAlert("Chat thêm trước khi nhờ AI gợi ý tên!","Chưa đủ thông tin");return;}
+  const b=document.getElementById("btn-suggest-name"),ot=b.innerHTML;b.innerHTML="⏳...";b.disabled=true;
+  const conv=chatHistories[id].slice(-6).map(m=>`${m.role}: ${m.parts[0].text}`).join("\n");
+  const r=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:`Gợi ý tên ngắn (4-5 từ) cho cuộc trò chuyện này. CHỈ TRẢ VỀ TÊN:\n${conv}`}]}]});
+  document.getElementById("rename-input").value=r.trim().replace(/"/g,"");
+  b.innerHTML=ot;b.disabled=false;
+}
+
+async function summarizeChatHistory(){
+  const id=currentChatId;if(!chatHistories[id]||chatHistories[id].length<4){showCustomAlert("Cần chat thêm để tóm tắt!","Chưa đủ dữ liệu");return;}
+  const b=document.getElementById("summarize-chat-btn"),ot=b.innerHTML;b.innerHTML="⏳...";b.disabled=true;
+  const conv=chatHistories[id].map(m=>`${m.role}: ${m.parts[0].text}`).join("\n");
+  const r=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:`Tóm tắt kiến thức đã học (Markdown gạch đầu dòng) và kết thúc bằng 1 lời khuyên ôn tập: ${conv}`}]}]});
+  appendMessage("model",r);chatHistories[id].push({role:"model",parts:[{text:r}]});
+  b.innerHTML=ot;b.disabled=false;
+}</script>
+<script>
+function openRenameModalFromMenu(id,e){e.stopPropagation();closeAllChatMenus();currentRenameChatId=id;let n=id==="default"?(chatCustomNames["default"]||"Chat Tự Do"):(chatCustomNames[id]||`Kế hoạch: ${chatSubjects[id]}`);document.getElementById("rename-input").value=n;document.getElementById("rename-modal").classList.remove("hidden");setTimeout(()=>document.getElementById("rename-input").focus(),100);}
+function closeRenameModal(){document.getElementById("rename-modal").classList.add("hidden");}
+function saveRenameChat(){const v=document.getElementById("rename-input").value.trim();if(v)chatCustomNames[currentRenameChatId]=v;else delete chatCustomNames[currentRenameChatId];updateSidebarHistory();if(currentChatId===currentRenameChatId){let t=chatCustomNames[currentChatId]||(currentChatId==="default"?(chatSubjects["default"]||"Chưa chọn"):`KH: ${chatSubjects[currentChatId]}`);document.getElementById("header-subtitle").innerText="Trọng tâm: "+t;}closeRenameModal();}
+
+function updateSidebarHistory(){
+  const c=document.getElementById("sidebar-chat-history");if(!c)return;
+  let h="";
+  if(chatHistories["default"]&&chatHistories["default"].length>1){
+    let dn=chatCustomNames["default"]||"Chat Tự Do";
+    h+=`<div class="relative group mt-1 flex items-center w-full"><button onclick="openChatHistory('default')" title="${dn}" class="flex items-center p-2 rounded-lg transition-all text-sm w-full ${currentChatId==="default"?"bg-eva-blue/10 text-eva-neon border border-eva-blue/30":"text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"} pr-8"><svg class="w-5 h-5 shrink-0 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg><span class="truncate hidden md:block text-xs font-medium">${dn}</span></button><button onclick="toggleChatMenu('default',event)" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center w-6 h-6 rounded hover:bg-gray-700 z-10"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg></button><div id="menu-dropdown-default" class="chat-menu-dropdown hidden absolute left-10 top-full mt-1 w-36 bg-eva-panel border border-eva-border rounded-xl shadow-2xl overflow-hidden"><button onclick="openRenameModalFromMenu('default',event)" class="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-eva-blue/20 hover:text-eva-neon flex items-center gap-2">✏️ Đổi tên</button><button onclick="deleteChatFromMenu('default',event)" class="w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2">🗑️ Xóa chat</button></div></div>`;
+  }
+  Object.keys(activeDays).forEach((pid,idx)=>{
+    const subj=chatSubjects[pid];const dn=chatCustomNames[pid]||`KH ${idx+1}: ${subj}`;const ia=currentChatId===pid;
+    h+=`<div class="relative group mt-1 flex items-center w-full"><button onclick="openChatHistory('${pid}')" title="${dn}" class="flex items-center p-2 rounded-lg transition-all text-sm w-full ${ia?"bg-eva-blue/10 text-eva-neon border border-eva-blue/30":"text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"} pr-8"><svg class="w-5 h-5 shrink-0 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg><span class="truncate hidden md:block text-xs font-medium">${dn}</span></button><button onclick="toggleChatMenu('${pid}',event)" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 hidden md:flex items-center justify-center w-6 h-6 rounded hover:bg-gray-700 z-10"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg></button><div id="menu-dropdown-${pid}" class="chat-menu-dropdown hidden absolute left-10 top-full mt-1 w-36 bg-eva-panel border border-eva-border rounded-xl shadow-2xl overflow-hidden"><button onclick="openRenameModalFromMenu('${pid}',event)" class="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-eva-blue/20">✏️ Đổi tên</button><button onclick="deleteChatFromMenu('${pid}',event)" class="w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10">🗑️ Xóa</button></div></div>`;
+  });
+  c.innerHTML=h;
+}
+
+function openChatHistory(id){switchTab("theory");switchChatContext(id);}
+function openNewFreeChat(){switchTab("theory");switchChatContext("default");}
+
+function switchChatContext(id){
+  currentChatId=id;document.querySelectorAll(".chat-container-instance").forEach(e=>e.classList.add("hidden"));
+  const sb=document.getElementById("summarize-chat-btn");
+  if(chatHistories[id]&&chatHistories[id].length>=4)sb?.classList.remove("hidden");else sb?.classList.add("hidden");
+  let c=document.getElementById("chat-container-"+id);
+  if(!c){
+    c=document.createElement("div");c.id="chat-container-"+id;c.className="chat-container-instance space-y-6 pb-4";
+    document.getElementById("chat-wrapper").appendChild(c);chatHistories[id]=[];
+    const wm=parseMarkdownWithMath(`Xin chào! Đây là cuộc trò chuyện riêng cho **${chatSubjects[id]||"môn học"}** của bạn. ✨`);
+    c.innerHTML=`<div class="flex gap-4"><div class="w-10 h-10 rounded-xl bg-gradient-to-br from-eva-blue to-eva-purple flex-shrink-0 flex items-center justify-center text-white font-bold shadow-lg mt-1">E</div><div class="glass-panel p-5 rounded-2xl rounded-tl-none max-w-[85%] border-eva-blue/30 border"><div class="text-sm leading-relaxed text-gray-200 markdown-content">${wm}</div></div></div>`;
+    chatHistories[id].push({role:"model",parts:[{text:`Xin chào! Đây là cuộc trò chuyện riêng cho ${chatSubjects[id]||"môn học"} của bạn. ✨`}]});
+  }
+  c.classList.remove("hidden");
+  let dt=chatCustomNames[id]||(id==="default"?(chatSubjects["default"]||"Chưa chọn"):`KH: ${chatSubjects[id]}`);
+  document.getElementById("header-subtitle").innerText="Trọng tâm: "+dt;updateSidebarHistory();
+  document.getElementById("chat-wrapper").scrollTop=document.getElementById("chat-wrapper").scrollHeight;
+}
+</script>
+<script>
+function changeSubject(){
+  currentSubject=document.getElementById("subject-selector").value;
+  chatSubjects["default"]=currentSubject;
+  delete chatCustomNames["default"];customKnowledge="";
+  document.getElementById("knowledge-input").value="";
+  document.getElementById("header-subtitle").innerText="Trong tam: "+currentSubject;
+  var s=document.getElementById("knowledge-status");
+  if(s){s.innerText="Chua nap.";s.classList.remove("text-green-400");}
+  initChat(currentSubject);
+  document.getElementById("deep-dive").classList.add("hidden");
+  document.getElementById("deep-dive-btn-container").classList.add("hidden");
+  document.getElementById("tags-container").innerHTML='<span class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-lg text-xs">Chua co du lieu.</span>';
+  document.getElementById("eva-insight").innerHTML='"Hay chat de co du lieu."';
+  if(radarChartInstance){radarChartInstance.data.datasets[0].data=[0,0,0,0,0];radarChartInstance.update();
+    ["bio-focus-text","bio-reflex-text"].forEach(function(id){var el=document.getElementById(id);if(el)el.innerText="0%";});
+    ["bio-focus-bar","bio-reflex-bar"].forEach(function(id){var el=document.getElementById(id);if(el)el.style.width="0%";});}
+  saveRoadmapState();
+}
+function initChat(subject,isCustom){
+  currentChatId="default";chatSubjects["default"]=subject;chatHistories["default"]=[];
+  document.querySelectorAll(".chat-container-instance").forEach(function(e){e.classList.add("hidden");});
+  var c=document.getElementById("chat-container-default");
+  if(!c){c=document.createElement("div");c.id="chat-container-default";c.className="chat-container-instance space-y-6";document.getElementById("chat-wrapper").appendChild(c);}
+  c.innerHTML="";c.classList.remove("hidden");
+  var wm="",raw="";
+  if(!subject){
+    wm='<div class="mb-3"><span class="bg-gray-700 text-gray-300 text-xs px-3 py-1.5 rounded-md border border-gray-600 font-semibold">CHUA CHON MON HOC</span></div><p class="mb-2">Xin chao! Hay chon mon hoc o tab Ca Nhan Hoa nhe!</p><div class="bg-gray-800/80 border border-gray-600 rounded-xl p-4 mt-2 flex items-center justify-between gap-4"><span class="text-sm text-gray-300">Thiet lap mon hoc ngay.</span><button onclick="switchTab(\'profile\');switchProfileSubTab(\'kehoach\');" class="bg-eva-blue hover:bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold">Chon Mon Hoc</button></div>';
+    raw="Chua chon mon.";
+  } else if(isCustom){
+    wm=parseMarkdownWithMath("EVA da nap xong tai lieu **"+subject+"**! Hay xem lai, minh se chuan bi cau hoi on tap nhe!");
+    raw="EVA da nap tai lieu "+subject;
+  } else {
+    wm='<div class="mb-3"><span class="bg-blue-900/50 text-blue-400 text-xs px-3 py-1.5 rounded-md border border-blue-800/50 font-semibold">BUOC 1: LEN KHOACH</span></div><p class="mb-2">Xin chao! EVA san sang cho mon <strong>'+subject+'</strong>.</p><div class="bg-gray-800/80 border border-gray-600 rounded-xl p-4 flex items-center justify-between gap-4"><span class="text-sm text-gray-300">Tao lo trinh 7 ngay ngay!</span><button onclick="switchTab(\'profile\');switchProfileSubTab(\'kehoach\');" class="bg-eva-blue hover:bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold">Len Ke Hoach</button></div>';
+    raw="EVA san sang cho "+subject;
+  }
+  var d=document.createElement("div");d.className="flex gap-4";
+  d.innerHTML='<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-eva-blue to-eva-purple flex-shrink-0 flex items-center justify-center text-white font-bold shadow-lg mt-1">E</div><div class="glass-panel p-5 rounded-2xl rounded-tl-none max-w-[85%] border-eva-blue/30 border"><div class="text-sm leading-relaxed text-gray-200 markdown-content">'+wm+'</div></div>';
+  c.appendChild(d);chatHistories["default"].push({role:"model",parts:[{text:raw}]});
+  updateSidebarHistory();if(window.MathJax)MathJax.typesetPromise([d]).catch(function(){});
+}
+function openKnowledgeModal(){document.getElementById("knowledge-modal").classList.remove("hidden");}
+function closeKnowledgeModal(){document.getElementById("knowledge-modal").classList.add("hidden");}
+function loadKnowledge(){
+  customKnowledge=document.getElementById("knowledge-input").value.trim();
+  if(customKnowledge){closeKnowledgeModal();initChat(currentSubject,true);var s=document.getElementById("knowledge-status");if(s){s.innerText="Da nap tai lieu";s.classList.add("text-green-400");}}
+  else showCustomAlert("Vui long nhap tai lieu!");
+}
+function getEvaSystemPrompt(){
+  var p="Ban la EVA, tro ly hoc tap thong minh chuyen mon "+( chatSubjects[currentChatId]||currentSubject)+". Quy tac: Xung la 'EVA', goi nguoi dung la 'ban'. Dung Markdown va LaTeX ($...$) cho cong thuc. Phan hoi ngan gon, ro rang.";
+  if(customKnowledge)p+="\n\n[TAI LIEU]: "+customKnowledge+"\n\nBam sat tai lieu khi giang day.";
+  return p;
+}
+async function sendChatMessage(){
+  var subj=chatSubjects[currentChatId];
+  if(!subj&&currentChatId==="default"){showCustomAlert("Chon mon hoc truoc nhe!","Thong bao");return;}
+  var inp=document.getElementById("chat-input"),t=inp.value.trim();
+  if(!t&&!currentUploadedImageBase64)return;
+  var mt=t||"Hay phan tich hinh anh nay.";
+  var ib=currentUploadedImageBase64,im=currentUploadedImageMimeType;
+  var is=ib?document.getElementById("image-preview").src:null;
+  appendMessage("user",t,is);inp.value="";clearImage();
+  var up=[{text:mt}];if(ib)up.push({inlineData:{mimeType:im,data:ib}});
+  chatHistories[currentChatId].push({role:"user",parts:up});updateSidebarHistory();
+  var tid=showTypingIndicator();
+  var pl={contents:chatHistories[currentChatId],systemInstruction:{parts:[{text:getEvaSystemPrompt()}]}};
+  var resp=await fetchGeminiAPI(pl);
+  var tel=document.getElementById(tid);if(tel)tel.remove();
+  appendMessage("model",resp);chatHistories[currentChatId].push({role:"model",parts:[{text:resp}]});
+  if(chatHistories[currentChatId].length>=4){var sb=document.getElementById("summarize-chat-btn");if(sb){sb.classList.remove("hidden");sb.classList.add("flex");}}
+}
+function handleChatEnter(e){if(e.key==="Enter")sendChatMessage();}
+function appendMessage(role,text,imageUrl){
+  var c=document.getElementById("chat-container-"+currentChatId);if(!c)return;
+  var d=document.createElement("div");
+  var ih=imageUrl?'<img src="'+imageUrl+'" class="mt-2 mb-2 max-w-xs rounded-lg border border-gray-600 block">':'';
+  if(role==="user"){
+    d.className="flex gap-4 flex-row-reverse";
+    d.innerHTML='<div class="w-10 h-10 rounded-full bg-gray-600 flex-shrink-0 flex items-center justify-center text-white font-bold text-xs">HS</div><div class="bg-blue-600/80 p-4 rounded-2xl rounded-tr-none max-w-[80%] shadow-lg">'+ih+'<div class="text-sm text-white whitespace-pre-wrap">'+text+'</div></div>';
+  } else {
+    d.className="flex gap-4 group/msg";var ft="";
+    try{ft=parseMarkdownWithMath(text);}catch(e){ft=text;}
+    d.innerHTML='<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-eva-blue to-eva-purple flex-shrink-0 flex items-center justify-center text-white font-bold shadow-lg mt-1">E</div><div class="glass-panel p-4 rounded-2xl rounded-tl-none max-w-[85%] border-eva-blue/30 border"><div class="text-sm leading-relaxed text-gray-200 markdown-content pt-2">'+ft+'</div></div>';
+  }
+  c.appendChild(d);document.getElementById("chat-wrapper").scrollTop=document.getElementById("chat-wrapper").scrollHeight;
+  if(role==="model"&&window.MathJax)MathJax.typesetPromise([d]);
+}
+function showTypingIndicator(){
+  var c=document.getElementById("chat-container-"+currentChatId),d=document.createElement("div"),id="typing-"+Date.now();
+  d.id=id;d.className="flex gap-4";
+  d.innerHTML='<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-eva-blue to-eva-purple flex-shrink-0 flex items-center justify-center text-white font-bold shadow-lg">E</div><div class="glass-panel p-4 rounded-2xl rounded-tl-none w-24 border-eva-blue/30 border flex justify-center items-center gap-1"><div class="w-2 h-2 bg-eva-neon rounded-full typing-dot"></div><div class="w-2 h-2 bg-eva-neon rounded-full typing-dot"></div><div class="w-2 h-2 bg-eva-neon rounded-full typing-dot"></div></div>';
+  c.appendChild(d);document.getElementById("chat-wrapper").scrollTop=document.getElementById("chat-wrapper").scrollHeight;return id;
+}
+function handleImageUpload(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(ev){currentUploadedImageBase64=ev.target.result.split(",")[1];currentUploadedImageMimeType=f.type;document.getElementById("image-preview").src=ev.target.result;document.getElementById("image-preview-container").classList.remove("hidden");};r.readAsDataURL(f);
+}
+function clearImage(){currentUploadedImageBase64=null;currentUploadedImageMimeType=null;document.getElementById("image-upload").value="";document.getElementById("image-preview-container").classList.add("hidden");}
+</script>
+<script>
+async function generateDynamicExercise(focus){
+  if(!currentSubject){showCustomAlert("Vui long chon mon hoc truoc!");return;}
+  var c=document.getElementById("exercise-container");
+  c.innerHTML='<div class="py-10 text-eva-neon animate-pulse text-center font-bold">Dang nho EVA ra de...</div>';
+  document.getElementById("deep-dive-btn-container").classList.add("hidden");
+  document.getElementById("deep-dive").classList.add("hidden");
+  var prompt="Ban la chuyen gia ra de thi mon "+currentSubject+". Tao 1 cau hoi trac nghiem (4 dap an, 1 dung) ve chu de: '"+focus+"'. Dung $...$ cho cong thuc. TRA VE JSON: {\"question\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":false},{\"text\":\"...\",\"isCorrect\":true},{\"text\":\"...\",\"isCorrect\":false},{\"text\":\"...\",\"isCorrect\":false}]}";
+  try{
+    var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    var data=JSON.parse(res);currentExerciseData=data;
+    var labels=["A","B","C","D"];
+    var html='<div class="flex justify-between items-center mb-4"><span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">Chu de: '+focus+'</span></div><div class="text-lg text-white font-medium mb-6 markdown-content">'+parseMarkdownWithMath(data.question)+'</div><div class="space-y-3" id="options-container">';
+    data.options.forEach(function(o,i){html+='<button onclick="selectAnswerDynamic(this,'+o.isCorrect+')" class="w-full text-left p-4 rounded-xl border border-eva-border hover:bg-white/5 transition-all flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm shrink-0">'+labels[i]+'</span><span class="markdown-content">'+parseMarkdownWithMath(o.text)+'</span></button>';});
+    c.innerHTML=html+"</div>";if(window.MathJax)MathJax.typesetPromise([c]);
+  }catch(e){c.innerHTML='<div class="text-red-400 text-center py-10">Loi khi tao bai tap. Vui long thu lai!</div>';}
+}
+function selectAnswerDynamic(btn,isCorrect){
+  var btns=document.getElementById("options-container").querySelectorAll("button");
+  btns.forEach(function(b){b.onclick=null;b.classList.remove("hover:bg-white/5");});
+  if(isCorrect){btn.classList.add("bg-green-600/20","border-green-500","text-green-400");btn.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-green-600");document.getElementById("deep-dive-btn-container").classList.remove("hidden");}
+  else{btn.classList.add("bg-red-600/20","border-red-500","text-red-400");btn.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-red-600");
+    btns.forEach(function(b){if(b.getAttribute("onclick")&&b.getAttribute("onclick").includes("true")){b.classList.add("border-green-500","text-green-400");b.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-green-600");}});}
+}
+async function generateDeepDive(){
+  var btn=document.getElementById("btn-deep-dive"),ot=btn.innerHTML;btn.innerHTML="Dang tong hop...";btn.disabled=true;
+  var co=currentExerciseData.options.find(function(o){return o.isCorrect;}).text;
+  var prompt="Hoc sinh vua lam dung cau: '"+currentExerciseData.question+"'. Dap an dung: '"+co+"'. Tao 1 cau hoi 'NEU NHU...' mo rong tu duy. Giang vien nhiet huyet, dung $ cho cong thuc.";
+  var r=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}]});
+  document.getElementById("deep-dive-btn-container").classList.add("hidden");
+  var box=document.getElementById("deep-dive");box.classList.remove("hidden");
+  var ft="";try{ft=parseMarkdownWithMath(r);}catch(e){ft=r;}
+  document.getElementById("deep-dive-text").innerHTML='<strong>NEU NHU:</strong><div class="markdown-content mt-2">'+ft+'</div>';
+  if(window.MathJax)MathJax.typesetPromise([document.getElementById("deep-dive-text")]);
+  btn.innerHTML=ot;btn.disabled=false;
+}
+async function analyzeLearningStyle(){
+  var hist=chatHistories[currentChatId];
+  if(!hist||hist.length<2){showCustomAlert("Hay chat them voi EVA truoc khi phan tich!","Chua du du lieu");return;}
+  var btn=document.getElementById("btn-analyze"),ot=btn.innerHTML;btn.innerHTML="Dang quet...";btn.disabled=true;
+  var conv=hist.map(function(m){return m.role+": "+m.parts[0].text;}).join("\n");
+  var prompt="Phan tich phong cach hoc cua hoc sinh dua tren:\n"+conv+"\nTRA VE JSON: {\"tags\":[\"#Tag1\",\"#Tag2\"],\"insight\":\"nhan xet\",\"stats\":[85,90,75,80,88]}";
+  try{
+    var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    var data=JSON.parse(res);
+    document.getElementById("tags-container").innerHTML=data.tags.map(function(t){return'<span class="px-3 py-1.5 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-lg text-xs font-mono">'+t+'</span>';}).join("");
+    document.getElementById("eva-insight").innerHTML='"'+data.insight+'"';
+    if(radarChartInstance&&data.stats&&data.stats.length===5){radarChartInstance.data.datasets[0].data=data.stats;radarChartInstance.update();
+      var ft=document.getElementById("bio-focus-text"),fb=document.getElementById("bio-focus-bar");if(ft)ft.innerText=data.stats[0]+"%";if(fb)fb.style.width=data.stats[0]+"%";
+      var rt=document.getElementById("bio-reflex-text"),rb=document.getElementById("bio-reflex-bar");if(rt)rt.innerText=data.stats[3]+"%";if(rb)rb.style.width=data.stats[3]+"%";}
+  }catch(e){document.getElementById("eva-insight").innerText="Loi phan tich.";}
+  saveRoadmapState();
+  btn.innerHTML=ot;btn.disabled=false;
+}
+</script>
+<script>
+function startPhase(type,focus,planId,btn){
+  if(type==="theory"){switchChatContext(planId);switchTab("theory");
+    var shouldSend=true;if(btn){if(!btn.getAttribute("data-started")){btn.setAttribute("data-started","true");var ts=btn.querySelector(".btn-text");if(ts)ts.innerText="Tiep tuc Ly Thuyet";}else{shouldSend=false;}}
+    if(shouldSend){document.getElementById("chat-input").value="EVA oi, hay giup minh bat dau hoc ly thuyet ve chuyen de: "+focus+" nhe!";sendChatMessage();}
+  } else if(type==="exercise"){currentSubject=chatSubjects[planId];switchTab("exercise");generateDynamicExercise(focus);}
+}
+async function generateStudyPlan(){
+  if(!currentSubject){showCustomAlert("Hay chon mon hoc truoc!","Thong bao");return;}
+  var goal=document.getElementById("plan-goal").value.trim();if(!goal){showCustomAlert("Hay nhap muc tieu truoc!","Thong bao");return;}
+  var btn=document.getElementById("btn-plan"),ot=btn.innerHTML;btn.innerHTML="Dang lap ke hoach...";btn.disabled=true;
+  document.getElementById("plan-loading").classList.remove("hidden");
+  var tc=document.getElementById("tags-container"),tl=Array.from(tc.querySelectorAll("span")).map(function(s){return s.innerText;}).join(", ");
+  var sc=tl.includes("Chua co")||tl.includes("Chua co du lieu")?"Hoc sinh moi bat dau.":"Phong cach hoc: "+tl;
+  var prompt="Ban la EVA, chuyen gia thiet ke lo trinh. Mon: "+currentSubject+". Muc tieu: "+goal+". "+sc+" Tao ke hoach 7 ngay (JSON): {\"intro\":\"dong vien\",\"days\":[{\"day_number\":1,\"name\":\"...\",\"focus\":\"...\",\"action\":\"...\",\"motivation\":\"...\"},...]}";
+  try{
+    var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    var data=JSON.parse(res);
+    var planId="plan_"+Date.now();activeDays[planId]=1;chatSubjects[planId]=currentSubject;updateSidebarHistory();
+    var html='<div id="'+planId+'" class="bg-eva-panel/80 border border-eva-border rounded-2xl p-4 md:p-5 text-sm text-gray-200 shadow-xl mb-6 relative group overflow-hidden"><button onclick="removePlan(\''+planId+'\')" class="absolute top-3 right-3 text-gray-500 hover:text-red-400 bg-gray-800 w-7 h-7 flex items-center justify-center rounded-full z-10 opacity-0 group-hover:opacity-100">x</button>';
+    html+='<div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-5 mb-5 shadow-xl relative overflow-hidden border border-white/10"><div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div><div class="flex items-center gap-3 mb-5 flex-wrap relative z-10"><h2 class="text-3xl font-black tracking-tight">'+currentSubject+'</h2><span class="text-xs font-semibold bg-white/20 px-3 py-1.5 rounded-full border border-white/30">'+goal+'</span></div>';
+    html+='<div class="flex justify-between items-end mb-4 px-1 relative z-10"><span class="text-2xl font-bold flex items-center gap-1.5">🔥 Chuoi</span><button onclick="revealNextDay(\''+planId+'\')" class="text-xs font-bold bg-white text-purple-600 hover:bg-blue-50 px-4 py-2 rounded-full transition-all streak-next-text">Tiep tuc ngay 1 ▶</button></div>';
+    html+='<div class="flex justify-between items-center w-full mt-2 px-1 relative z-10">';
+    ["T2","T3","T4","T5","T6","T7","CN"].forEach(function(dl,idx){html+='<div class="flex flex-col items-center gap-1.5 streak-day w-full" data-day-index="'+idx+'"><span class="text-2xl flame-icon grayscale opacity-40 brightness-200 transition-all inline-block cursor-default">🔥</span><span class="text-[10px] font-semibold text-white/80">'+dl+'</span></div>';});
+    html+='</div></div>';
+    html+='<div class="flex items-start gap-3 mb-4 px-2"><p class="text-sm text-gray-300 italic leading-relaxed pt-1">"'+data.intro+'"</p></div><div class="space-y-3">';
+    data.days.forEach(function(day){
+      html+='<div class="bg-gray-900/40 p-4 rounded-xl border border-gray-700/60 day-card hidden" data-plan-id="'+planId+'" data-day="'+day.day_number+'" data-motivation="'+day.motivation+'">';
+      html+='<div class="flex justify-between items-center mb-2 gap-2 flex-col md:flex-row"><h4 class="font-bold text-white text-sm flex items-center gap-2"><span class="bg-eva-blue text-white text-xs px-2 py-0.5 rounded day-badge">Ngay '+day.day_number+'</span> '+day.name+'</h4><span class="text-[10px] font-semibold text-eva-blue px-2 py-1 rounded bg-eva-blue/10 border border-eva-blue/30 status-text">Dang hoc Ly thuyet</span></div>';
+      html+='<p class="text-xs text-gray-400 mb-3">'+day.action+'</p>';
+      html+='<div class="step-theory flex flex-col sm:flex-row gap-2"><button onclick="startPhase(\'theory\',\''+day.focus+'\',\''+planId+'\',this)" class="flex-1 bg-eva-blue/10 hover:bg-eva-blue/30 border border-eva-blue/40 text-blue-300 py-2 rounded-lg text-xs font-semibold transition-colors"><span class="btn-text">Bat dau Ly Thuyet</span></button><button onclick="completeTheory(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">Xong Ly Thuyet</button></div>';
+      html+='<div class="step-exercise hidden flex-col sm:flex-row gap-2 mt-2"><button onclick="startPhase(\'exercise\',\''+day.focus+'\',\''+planId+'\')" class="flex-1 bg-eva-purple/10 hover:bg-eva-purple/30 border border-eva-purple/40 text-purple-300 py-2 rounded-lg text-xs font-semibold">Luyen Bai Tap</button><button onclick="completeDay(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">Hoan Thanh Ngay</button></div>';
+      html+='</div>';
+    });
+    html+='</div></div>';
+    document.getElementById("plan-loading").classList.add("hidden");
+    var nd=document.createElement("div");nd.innerHTML=html;document.getElementById("plans-container").prepend(nd);
+    saveRoadmapState();
+    showCustomAlert("Ke hoach da duoc tao!","Thanh cong");
+  }catch(e){document.getElementById("plan-loading").classList.add("hidden");showCustomAlert("Loi tao ke hoach. Thu lai nhe!");}
+  btn.innerHTML=ot;btn.disabled=false;
+}
+function removePlan(id){
+  showCustomAlert("Ban co muon xoa ke hoach nay?","Xoa ke hoach",true,function(){
+    delete activeDays[id];delete chatSubjects[id];delete chatHistories[id];delete chatCustomNames[id];
+    var el=document.getElementById(id);if(el){var p=el.closest("div");if(p)p.remove();}
+    var cc=document.getElementById("chat-container-"+id);if(cc)cc.remove();
+    if(currentChatId===id)switchChatContext("default");updateSidebarHistory();
+  });
+}
+function completeTheory(btn){
+  var card=btn.closest(".day-card");if(!card)return;
+  var st=card.querySelector(".status-text");if(st){st.innerText="Dang giai Bai tap";st.className="text-xs font-semibold text-eva-purple px-2 py-1 rounded bg-eva-purple/10 border border-eva-purple/30 status-text";}
+  var ts=card.querySelector(".step-theory");if(ts)ts.innerHTML='<div class="flex-1 bg-green-900/20 border border-green-500/30 text-green-400 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">✓ Da hoan thanh Ly thuyet</div>';
+  var ex=card.querySelector(".step-exercise");if(ex){ex.classList.remove("hidden");ex.classList.add("flex");}
+}
+function completeDay(btn){
+  var card=btn.closest(".day-card");if(!card)return;
+  var planId=card.getAttribute("data-plan-id");
+  card.classList.add("border-green-500/50","bg-green-900/10");
+  var st=card.querySelector(".status-text");if(st){st.innerText="✨ "+(card.getAttribute("data-motivation")||"Tuyet voi!");st.className="text-xs font-bold text-green-400 px-3 py-2 rounded bg-green-900/20 border border-green-500/50 status-text";}
+  var ex=card.querySelector(".step-exercise");if(ex)ex.innerHTML='<div class="flex-1 bg-green-900/20 border border-green-500/30 text-green-400 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">✓ Da ket thuc ngay hoc</div>';
+  var dn=parseInt(card.getAttribute("data-day"));
+  if(!isNaN(dn)){
+    var flameEl=document.querySelector('[id="'+planId+'"] .streak-day[data-day-index="'+(dn-1)+'"]');
+    if(flameEl){var f=flameEl.querySelector(".flame-icon");f.classList.remove("grayscale","opacity-40","brightness-200");f.classList.add("scale-125");setTimeout(function(){f.classList.remove("scale-125");},300);}
+    var nextBtn=document.querySelector('[id="'+planId+'"] .streak-next-text');
+    if(nextBtn){if(dn<7){activeDays[planId]=dn+1;nextBtn.innerHTML="Tiep tuc ngay "+activeDays[planId]+" ▶";}else{nextBtn.innerText="Hoan thanh! 🎉";nextBtn.onclick=null;}}
+  saveRoadmapState();
+  }
+}
+function revealNextDay(planId){
+  var cur=activeDays[planId];
+  var card=document.querySelector(".day-card[data-plan-id='"+planId+"'][data-day='"+cur+"']");
+  if(card){card.classList.remove("hidden");card.scrollIntoView({behavior:"smooth",block:"center"});}
+}
+function switchTab(n){
+  document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.remove("active","bg-eva-blue/20","text-eva-neon");});
+  var ab=document.getElementById("btn-"+n);if(ab)ab.classList.add("active","bg-eva-blue/20","text-eva-neon");
+  document.querySelectorAll(".tab-content").forEach(function(c){c.classList.remove("active");});
+  var at=document.getElementById("tab-"+n);if(at)at.classList.add("active");
+  var titles={theory:"Cuoc Tro Chuyen Moi",exercise:"Ren Luyen Phan Xa",profile:"Ho so: DAU VAN TAY TU DUY"};
+  document.getElementById("header-title").innerText=titles[n]||"EVA";
+  if(n==="profile"&&!window.chartInitialized){initRadarChart([0,0,0,0,0]);window.chartInitialized=true;}
+}
+function initRadarChart(data){
+  var ctx=document.getElementById("radarChart");if(!ctx)return;
+  if(radarChartInstance)radarChartInstance.destroy();
+  radarChartInstance=new Chart(ctx,{type:"radar",data:{labels:["Ly thuyet","Phan bien","Van dung","Toc do","Sang tao"],datasets:[{data:data,backgroundColor:"rgba(59,130,246,0.4)",borderColor:"#60a5fa",borderWidth:2}]},options:{scales:{r:{min:0,max:100,ticks:{display:false}}},plugins:{legend:{display:false}}}});
+}
+function switchProfileSubTab(name){
+  document.getElementById("sub-hoso").classList.toggle("hidden",name!=="hoso");
+  document.getElementById("sub-kehoach").classList.toggle("hidden",name!=="kehoach");
+  document.getElementById("btn-sub-hoso").className=name==="hoso"?"px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md":"px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white";
+  document.getElementById("btn-sub-kehoach").className=name==="kehoach"?"px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md":"px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white";
+}
+</script>
+</body>
+</html>
