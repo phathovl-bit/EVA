@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const STORE_KEY = "eva_tkb_schedules_v1";
   const ROADMAP_STORE_KEY = "eva_personal_roadmaps_v1";
   let initialized = false;
@@ -265,6 +265,9 @@
     el("eva-results-load-btn")?.addEventListener("click", loadIntegratedResults);
     el("eva-results-refresh-btn")?.addEventListener("click", loadIntegratedResults);
     el("eva-results-export-btn")?.addEventListener("click", exportResultsCsv);
+    el("eva-results-class-select")?.addEventListener("change", async () => {
+      await populateResultsAssignmentOptions(el("eva-results-class-select")?.value || "", true);
+    });
     el("eva-results-search-text")?.addEventListener("input", () => {
       latestRenderedRows = applyResultsSearch(allLoadedRows, el("eva-results-search-text")?.value || "");
       renderResultsTable(latestRenderedRows);
@@ -678,13 +681,13 @@
     if (el("tkb-name-input")) el("tkb-name-input").value = rec.name || "";
     window.switchTkbTab?.("create");
     renderScheduleBuilder();
-    appendAiLog("bot", `Da mo TKB: ${rec.name}`);
+    appendAiLog("bot", `Đã mở TKB: ${rec.name}`);
   }
 
   function duplicateSavedTkb(idValue) {
     const rec = getSaved().find((x) => x.id === idValue);
     if (!rec) return;
-    const copy = { ...rec, id: id("savedtkb"), name: `${rec.name || "TKB"} (ban sao)`, createdAt: new Date().toISOString() };
+    const copy = { ...rec, id: id("savedtkb"), name: `${rec.name || "TKB"} (bản sao)`, createdAt: new Date().toISOString() };
     const items = getSaved();
     items.unshift(copy);
     setSaved(items);
@@ -692,7 +695,7 @@
   }
 
   function deleteSavedTkb(idValue) {
-    if (!confirm("Xoa TKB nay?")) return;
+    if (!confirm("Xóa TKB này?")) return;
     setSaved(getSaved().filter((x) => x.id !== idValue));
     renderScheduleListView();
   }
@@ -705,8 +708,8 @@
     const subject = String(el("subject-selector")?.value || "").trim();
     const status = el("knowledge-status");
     if (!subject) return;
-    setRoadmapStatus(`ÄÃ£ chá»n mÃ´n: ${subject}`);
-    if (status && !roadmapKnowledgeText) status.textContent = "ChÆ°a náº¡p. Nháº¥n Ä‘á»ƒ náº¡p tÃ i liá»‡u";
+    setRoadmapStatus(`Đã chọn môn: ${subject}`);
+    if (status && !roadmapKnowledgeText) status.textContent = "Chưa nạp. Nhấn để nạp tài liệu";
   }
 
   function openRoadmapKnowledgeModal() {
@@ -726,11 +729,11 @@
     roadmapKnowledgeText = String(el("knowledge-input")?.value || "").trim();
     const status = el("knowledge-status");
     if (status) {
-      status.textContent = roadmapKnowledgeText ? "ÄÃ£ náº¡p tÃ i liá»‡u" : "ChÆ°a náº¡p. Nháº¥n Ä‘á»ƒ náº¡p tÃ i liá»‡u";
+      status.textContent = roadmapKnowledgeText ? "Đã nạp tài liệu" : "Chưa nạp. Nhấn để nạp tài liệu";
       status.style.color = roadmapKnowledgeText ? "#4ade80" : "";
     }
     closeRoadmapKnowledgeModal();
-    setRoadmapStatus(roadmapKnowledgeText ? "ÄÃ£ náº¡p nguá»“n kiáº¿n thá»©c cho roadmap." : "ÄÃ£ xÃ³a nguá»“n kiáº¿n thá»©c.");
+    setRoadmapStatus(roadmapKnowledgeText ? "Đã nạp nguồn kiến thức cho roadmap." : "Đã xóa nguồn kiến thức.");
   }
 
   async function generatePersonalRoadmap() {
@@ -745,13 +748,13 @@
     };
 
     if (!form.subject || !form.goal) {
-      setRoadmapStatus("Nhap mon hoc/chuyen de va muc tieu truoc da.", true);
+      setRoadmapStatus("Nhập môn học/chuyên đề và mục tiêu trước đã.", true);
       return;
     }
 
     const mismatch = detectRoadmapSubjectMismatch(form.subject, form.goal);
     if (mismatch) {
-      setRoadmapStatus(`Muc tieu cua ban co ve dang nhac sang mon ${mismatch}. Kiem tra lai de EVA lap lo trinh dung mon nhe.`, true);
+      setRoadmapStatus(`Mục tiêu của bạn có vẻ đang nhắc sang môn ${mismatch}. Kiểm tra lại để EVA lập lộ trình đúng môn nhé.`, true);
       return;
     }
 
@@ -759,10 +762,10 @@
     const loading = el("plan-loading");
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "â³ Äang thiáº¿t láº­p lá»™ trÃ¬nh...";
+      btn.textContent = "⏳ Đang thiết lập lộ trình...";
     }
     if (loading) loading.style.display = "block";
-    setRoadmapStatus("EVA dang tao lo trinh ca nhan...");
+    setRoadmapStatus("EVA đang tạo lộ trình cá nhân...");
     appendRoadmapLog("user", `${form.subject} | ${form.goal}`);
 
     try {
@@ -777,15 +780,15 @@
       renderRoadmapOutput();
       renderRoadmapSavedList();
       renderRoadmapPlansContainer();
-      appendRoadmapLog("bot", roadmapCurrent.coachNote || roadmapCurrent.summary || "Da tao xong lo trinh.");
-      setRoadmapStatus("ÄÃ£ táº¡o lá»™ trÃ¬nh cÃ¡ nhÃ¢n.");
+      appendRoadmapLog("bot", roadmapCurrent.coachNote || roadmapCurrent.summary || "Đã tạo xong lộ trình.");
+      setRoadmapStatus("Đã tạo lộ trình cá nhân.");
     } catch (err) {
-      setRoadmapStatus(err?.message || "Khong tao duoc lo trinh luc nay.", true);
-      appendRoadmapLog("bot", err?.message || "Khong tao duoc lo trinh luc nay.");
+      setRoadmapStatus(err?.message || "Không tạo được lộ trình lúc này.", true);
+      appendRoadmapLog("bot", err?.message || "Không tạo được lộ trình lúc này.");
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = "âœ¨ LÃªn Káº¿ Hoáº¡ch";
+        btn.textContent = "✨ Lên Kế Hoạch";
       }
       if (loading) loading.style.display = "none";
     }
@@ -793,7 +796,7 @@
 
   async function askRoadmapModel(prompt) {
     if (typeof window.callWorkerChat !== "function") {
-      throw new Error("Khong tim thay callWorkerChat de goi worker.");
+      throw new Error("Không tìm thấy callWorkerChat để gọi worker.");
     }
     return await window.callWorkerChat(prompt, {
       model: "gemini-3.1-flash-lite-preview",
@@ -859,7 +862,7 @@ Du lieu bo tro:
 Yeu cau:
 - Viet lo trinh thuc te, linh hoat, khong qua may moc.
 - Moi ngay chi de xuat nhung viec co the lam duoc trong ${form.minutes} phut, uu tien it ma chat.
-- Neu hoc sinh ban, moi ngay phai co 1 phien ban nhe hon, khong gay cam giac bi dut nhá»‹p.
+- Neu hoc sinh ban, moi ngay phai co 1 phien ban nhe hon, khong gay cam giac bi dut nhip.
 - Neu thay hoc sinh dang yeu nen, uu tien on nen truoc roi moi nang cao.
 - Loi khuyen phai nghe tu nhien, nhu mot nguoi dong hanh dang noi chuyen voi hoc sinh that.
 - Tranh viet kieu khau hieu hoac checklist vo cam. Moi task nen cu the va de bat tay vao hoc ngay.
@@ -910,8 +913,8 @@ Schema:
   function getConversationSummary() {
     try {
       const raw = JSON.parse(localStorage.getItem("eva_conversation_history") || "[]");
-      if (!Array.isArray(raw) || !raw.length) return "chua co du lieu";
-      return raw.slice(-6).map((m) => `${m.role === "user" ? "Hoc sinh" : "EVA"}: ${String(m?.parts?.[0]?.text || "").slice(0, 120)}`).join(" || ");
+      if (!Array.isArray(raw) || !raw.length) return "chưa có dữ liệu";
+      return raw.slice(-6).map((m) => `${m.role === "user" ? "Học sinh" : "EVA"}: ${String(m?.parts?.[0]?.text || "").slice(0, 120)}`).join(" || ");
     } catch {
       return "chua co du lieu";
     }
@@ -921,7 +924,7 @@ Schema:
     try {
       const session = JSON.parse(localStorage.getItem("eva_last_online_exam_session") || "null");
       if (!session) return "chua co";
-      return `lop ${session.className || "chua ro"}, phong ${session.roomCode || "?"}, ${session.studentCount || 0} hoc sinh`;
+      return `lớp ${session.className || "chưa rõ"}, phòng ${session.roomCode || "?"}, ${session.studentCount || 0} học sinh`;
     } catch {
       return "chua co";
     }
@@ -929,7 +932,7 @@ Schema:
 
   function extractRoadmapJson(raw) {
     const text = String(raw || "").trim();
-    if (!text) throw new Error("Model khong tra ve noi dung.");
+    if (!text) throw new Error("Model không trả về nội dung.");
     const cleaned = text.replace(/^```json/i, "").replace(/^```/i, "").replace(/```$/i, "").trim();
     try {
       return JSON.parse(cleaned);
@@ -939,7 +942,7 @@ Schema:
         return JSON.parse(match[0]);
       }
     }
-    throw new Error("Khong doc duoc JSON lo trinh tu model.");
+    throw new Error("Không đọc được JSON lộ trình từ model.");
   }
 
   function normalizeRoadmapData(data, form) {
@@ -965,7 +968,7 @@ Schema:
       })).filter((x) => x.label || x.outcome) : [],
       schedule: schedule.map((item, idx) => ({
         day: Number(item?.day || idx + 1),
-        title: String(item?.title || `Ngay ${idx + 1}`).trim(),
+        title: String(item?.title || `Ngày ${idx + 1}`).trim(),
         focus: String(item?.focus || "").trim(),
         tasks: Array.isArray(item?.tasks) ? item.tasks.map((x) => String(x || "").trim()).filter(Boolean) : [],
         lightVersion: String(item?.lightVersion || "").trim(),
@@ -978,7 +981,7 @@ Schema:
     const host = el("roadmap-output");
     if (!host) return;
     if (!roadmapCurrent) {
-      host.innerHTML = '<div style="color:#9ca3af; line-height:1.5;">Chua co lo trinh. Hay nhap muc tieu roi bam <b>Tao lo trinh</b>.</div>';
+      host.innerHTML = '<div style="color:#9ca3af; line-height:1.5;">Chưa có lộ trình. Hãy nhập mục tiêu rồi bấm <b>Tạo lộ trình</b>.</div>';
       return;
     }
     host.innerHTML = `
@@ -990,29 +993,29 @@ Schema:
               <div style="color:#9ca3af;font-size:0.82rem;margin-top:4px;">${esc(roadmapCurrent.subject)} | ${esc(roadmapCurrent.goal)}</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <span class="roadmap-pill">${roadmapCurrent.days} ngay</span>
-              <span class="roadmap-pill">${roadmapCurrent.minutes} phut/ngay</span>
+              <span class="roadmap-pill">${roadmapCurrent.days} ngày</span>
+              <span class="roadmap-pill">${roadmapCurrent.minutes} phút/ngày</span>
               <span class="roadmap-pill">${esc(roadmapCurrent.intensity)}</span>
             </div>
           </div>
-          <div style="color:#cbd5e1;line-height:1.55;margin-top:12px;">${esc(roadmapCurrent.summary || "Lo trinh da san sang.")}</div>
-          ${roadmapCurrent.todayFocus ? `<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#111827;border:1px solid #334155;"><div style="color:#93c5fd;font-weight:700;margin-bottom:4px;">Hom nay nen tap trung</div><div style="color:#e5e7eb;line-height:1.55;">${esc(roadmapCurrent.todayFocus)}</div></div>` : ""}
-          ${roadmapCurrent.coachNote ? `<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#1a2332;border:1px solid #334155;"><div style="color:#c4b5fd;font-weight:700;margin-bottom:4px;">Nhan tu EVA</div><div style="color:#e5e7eb;line-height:1.55;">${esc(roadmapCurrent.coachNote)}</div></div>` : ""}
+          <div style="color:#cbd5e1;line-height:1.55;margin-top:12px;">${esc(roadmapCurrent.summary || "Lộ trình đã sẵn sàng.")}</div>
+          ${roadmapCurrent.todayFocus ? `<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#111827;border:1px solid #334155;"><div style="color:#93c5fd;font-weight:700;margin-bottom:4px;">Hôm nay nên tập trung</div><div style="color:#e5e7eb;line-height:1.55;">${esc(roadmapCurrent.todayFocus)}</div></div>` : ""}
+          ${roadmapCurrent.coachNote ? `<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:#1a2332;border:1px solid #334155;"><div style="color:#c4b5fd;font-weight:700;margin-bottom:4px;">Nhắn từ EVA</div><div style="color:#e5e7eb;line-height:1.55;">${esc(roadmapCurrent.coachNote)}</div></div>` : ""}
         </div>
-        ${roadmapCurrent.habits.length ? `<div class="roadmap-card"><div style="color:#fff;font-weight:700;margin-bottom:10px;">Nhip hoc EVA goi y</div>${roadmapCurrent.habits.map((h) => `<div style="color:#cbd5e1;line-height:1.5;margin-bottom:6px;">- ${esc(h)}</div>`).join("")}</div>` : ""}
-        ${roadmapCurrent.milestones.length ? `<div class="roadmap-card"><div style="color:#fff;font-weight:700;margin-bottom:10px;">Cot moc</div>${roadmapCurrent.milestones.map((m) => `<div style="display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid #1f2937;"><div style="color:#93c5fd;font-weight:700;">${esc(m.label)}</div><div style="color:#cbd5e1;line-height:1.5;">${esc(m.outcome)}</div></div>`).join("")}</div>` : ""}
+        ${roadmapCurrent.habits.length ? `<div class="roadmap-card"><div style="color:#fff;font-weight:700;margin-bottom:10px;">Nhịp học EVA gợi ý</div>${roadmapCurrent.habits.map((h) => `<div style="color:#cbd5e1;line-height:1.5;margin-bottom:6px;">- ${esc(h)}</div>`).join("")}</div>` : ""}
+        ${roadmapCurrent.milestones.length ? `<div class="roadmap-card"><div style="color:#fff;font-weight:700;margin-bottom:10px;">Cột mốc</div>${roadmapCurrent.milestones.map((m) => `<div style="display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid #1f2937;"><div style="color:#93c5fd;font-weight:700;">${esc(m.label)}</div><div style="color:#cbd5e1;line-height:1.5;">${esc(m.outcome)}</div></div>`).join("")}</div>` : ""}
         <div class="roadmap-card">
-          <div style="color:#fff;font-weight:700;margin-bottom:10px;">Lich hoc tung ngay</div>
+          <div style="color:#fff;font-weight:700;margin-bottom:10px;">Lịch học từng ngày</div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${roadmapCurrent.schedule.map((day) => `
               <div style="border:1px solid #273142;border-radius:12px;padding:12px;background:#0b1220;">
                 <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
-                  <div style="color:#fff;font-weight:700;">Ngay ${day.day} - ${esc(day.title)}</div>
-                  <span class="roadmap-pill">${esc(day.focus || "tap trung on tap")}</span>
+                  <div style="color:#fff;font-weight:700;">Ngày ${day.day} - ${esc(day.title)}</div>
+                  <span class="roadmap-pill">${esc(day.focus || "tập trung ôn tập")}</span>
                 </div>
                 ${day.tasks.length ? `<div style="margin-top:10px;color:#cbd5e1;line-height:1.5;">${day.tasks.map((task) => `<div style="margin-bottom:6px;">- ${esc(task)}</div>`).join("")}</div>` : ""}
-                ${day.lightVersion ? `<div style="margin-top:10px;padding:10px;border-radius:10px;background:#111827;border:1px dashed #334155;"><div style="color:#fcd34d;font-weight:700;margin-bottom:4px;">Neu hom do ban ban</div><div style="color:#e5e7eb;line-height:1.5;">${esc(day.lightVersion)}</div></div>` : ""}
-                ${day.successCheck ? `<div style="margin-top:10px;color:#93c5fd;font-size:0.82rem;">Xong ngay khi: ${esc(day.successCheck)}</div>` : ""}
+                ${day.lightVersion ? `<div style="margin-top:10px;padding:10px;border-radius:10px;background:#111827;border:1px dashed #334155;"><div style="color:#fcd34d;font-weight:700;margin-bottom:4px;">Nếu hôm đó bạn bận</div><div style="color:#e5e7eb;line-height:1.5;">${esc(day.lightVersion)}</div></div>` : ""}
+                ${day.successCheck ? `<div style="margin-top:10px;color:#93c5fd;font-size:0.82rem;">Xong ngày khi: ${esc(day.successCheck)}</div>` : ""}
               </div>`).join("")}
           </div>
         </div>
@@ -1136,7 +1139,7 @@ Schema:
 
   function saveCurrentRoadmap() {
     if (!roadmapCurrent) {
-      setRoadmapStatus("Chua co lo trinh de luu.", true);
+      setRoadmapStatus("Chưa có lộ trình để lưu.", true);
       return;
     }
     const items = getSavedRoadmaps();
@@ -1147,7 +1150,7 @@ Schema:
     roadmapSavedId = record.id;
     roadmapCurrent.id = record.id;
     renderRoadmapSavedList();
-    setRoadmapStatus("Da luu lo trinh.");
+    setRoadmapStatus("Đã lưu lộ trình.");
   }
 
   function resetRoadmapForm() {
@@ -1165,7 +1168,7 @@ Schema:
     if (el("subject-selector")) el("subject-selector").selectedIndex = 0;
     const status = el("knowledge-status");
     if (status) {
-      status.textContent = "ChÆ°a náº¡p. Nháº¥n Ä‘á»ƒ náº¡p tÃ i liá»‡u";
+      status.textContent = "Chưa nạp. Nhấn để nạp tài liệu";
       status.style.color = "";
     }
     setRoadmapStatus("");
@@ -1178,7 +1181,7 @@ Schema:
     if (!host) return;
     const items = getSavedRoadmaps();
     if (!items.length) {
-      host.innerHTML = '<div style="color:#9ca3af;font-size:0.88rem; line-height:1.45;">Chua co lo trinh nao duoc luu.</div>';
+      host.innerHTML = '<div style="color:#9ca3af;font-size:0.88rem; line-height:1.45;">Chưa có lộ trình nào được lưu.</div>';
       return;
     }
     host.innerHTML = items.map((item) => `
@@ -1214,11 +1217,11 @@ Schema:
     if (el("roadmap-notes")) el("roadmap-notes").value = item.notes || "";
     renderRoadmapOutput();
     renderRoadmapPlansContainer();
-    appendRoadmapLog("bot", `Da mo lai lo trinh: ${item.title || item.subject}`);
+    appendRoadmapLog("bot", `Đã mở lại lộ trình: ${item.title || item.subject}`);
   }
 
   function deleteSavedRoadmap(idValue) {
-    if (!confirm("Xoa lo trinh nay?")) return;
+    if (!confirm("Xóa lộ trình này?")) return;
     setSavedRoadmaps(getSavedRoadmaps().filter((x) => x.id !== idValue));
     if (roadmapSavedId === idValue) {
       roadmapCurrent = null;
@@ -1254,61 +1257,112 @@ Schema:
     return d.toLocaleString("vi-VN");
   }
 
+  function getResultClassesFromLocal() {
+    try {
+      if (typeof window.getClasses === "function") {
+        const classes = window.getClasses();
+        return Array.isArray(classes) ? classes : [];
+      }
+    } catch {}
+    return [];
+  }
+
   async function resultsApiFetch(path, options = {}) {
     if (typeof window.sbRest === "function") {
       return await window.sbRest(path, options);
     }
-    throw new Error("Khong tim thay sbRest.");
+    throw new Error("Không tìm thấy sbRest.");
   }
 
-  async function findRoomByCode(roomCode) {
-    const data = await resultsApiFetch(`/rest/v1/exam_rooms?room_code=eq.${encodeURIComponent(roomCode)}&select=id,room_code,room_name,exam_id&limit=1`);
-    return data && data.length ? data[0] : null;
+  function normalizeResultsAssignment(row) {
+    return {
+      id: String(row?.id || "").trim(),
+      title: String(row?.title || row?.name || "Bai tap").trim(),
+      assigned_class_name: String(row?.assigned_class_name || "").trim(),
+      open_at: row?.open_at || "",
+      due_at: row?.due_at || "",
+      status: String(row?.status || "").trim(),
+      exam_id: String(row?.exam_id || "").trim(),
+      duration_minutes: row?.duration_minutes ?? ""
+    };
   }
 
-  async function findRoomByClassName(className) {
-    const term = String(className || "").trim();
-    if (!term) return null;
-    const data = await resultsApiFetch(`/rest/v1/exam_rooms?room_name=ilike.*${encodeURIComponent(term)}*&select=id,room_code,room_name,exam_id&limit=5`);
-    return data && data.length ? data[0] : null;
-  }
-
-  async function fetchRoomStudents(roomId) {
-    return await resultsApiFetch(`/rest/v1/room_students?room_id=eq.${roomId}&select=student_code,student_name&order=student_code.asc,student_name.asc`);
-  }
-
-  async function fetchAttemptsByRoom(roomId) {
-    try {
-      return await resultsApiFetch(`/rest/v1/attempts?room_id=eq.${roomId}&select=id,student_code,student_name,score,correct_count,total_questions,status,is_submitted,submitted_at,started_at&order=started_at.desc,id.desc`);
-    } catch {
-      return await resultsApiFetch(`/rest/v1/attempts?room_id=eq.${roomId}&select=id,student_code,student_name,score,status,is_submitted,submitted_at,started_at&order=started_at.desc,id.desc`);
-    }
-  }
-
-  function resultsKeyOf(studentCode, studentName) {
+  function resultsStudentKey(studentCode, studentName) {
     return `${String(studentCode || "").trim().toUpperCase()}__${String(studentName || "").trim().toLowerCase()}`;
+  }
+
+  async function fetchAssignmentsByClassName(className) {
+    const name = String(className || "").trim();
+    if (!name) return [];
+    const rows = await resultsApiFetch(`/rest/v1/exam_assignments?assigned_class_name=eq.${encodeURIComponent(name)}&select=id,title,assigned_class_name,open_at,due_at,status,exam_id,duration_minutes&order=open_at.desc,id.desc`);
+    return (Array.isArray(rows) ? rows : []).map(normalizeResultsAssignment);
+  }
+
+  async function fetchStudentProfilesByClassName(className) {
+    const name = String(className || "").trim();
+    if (!name) return [];
+    const rows = await resultsApiFetch(`/rest/v1/student_profiles?class_name=eq.${encodeURIComponent(name)}&select=id,student_code,full_name,class_name,status&order=student_code.asc,full_name.asc`);
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  async function fetchAttemptsByAssignment(assignmentId) {
+    const id = String(assignmentId || "").trim();
+    if (!id) return [];
+    return await resultsApiFetch(`/rest/v1/exam_attempts?assignment_id=eq.${encodeURIComponent(id)}&select=id,assignment_id,student_id,score,correct_count,total_questions,status,submitted_at,started_at,created_at&order=created_at.desc,id.desc`);
   }
 
   function buildLatestAttemptMap(attempts) {
     const map = new Map();
     attempts.forEach((attempt) => {
-      const key = resultsKeyOf(attempt.student_code, attempt.student_name);
-      if (!map.has(key)) map.set(key, attempt);
+      const key = String(attempt?.student_id || "").trim();
+      if (key && !map.has(key)) map.set(key, attempt);
     });
     return map;
   }
 
+  function buildResultsRoster(localClass, profiles) {
+    const profileKeyMap = new Map();
+    (Array.isArray(profiles) ? profiles : []).forEach((profile) => {
+      profileKeyMap.set(
+        resultsStudentKey(profile?.student_code, profile?.full_name || profile?.student_name),
+        profile
+      );
+    });
+
+    const localStudents = Array.isArray(localClass?.students) ? localClass.students : [];
+    if (localStudents.length) {
+      return localStudents.map((student, idx) => {
+        const studentCode = String(student?.sbd || student?.student_code || "").trim();
+        const studentName = String(student?.name || student?.student_name || "").trim();
+        const profile = profileKeyMap.get(resultsStudentKey(studentCode, studentName)) || null;
+        return {
+          stt: idx + 1,
+          student_id: String(profile?.id || "").trim(),
+          student_name: studentName || String(profile?.full_name || "").trim(),
+          student_code: studentCode || String(profile?.student_code || "").trim()
+        };
+      });
+    }
+
+    return (Array.isArray(profiles) ? profiles : []).map((profile, idx) => ({
+      stt: idx + 1,
+      student_id: String(profile?.id || "").trim(),
+      student_name: String(profile?.full_name || profile?.student_name || "").trim(),
+      student_code: String(profile?.student_code || "").trim()
+    }));
+  }
+
   function buildResultRows(students, latestMap) {
     return students.map((student, idx) => {
-      const key = resultsKeyOf(student.student_code, student.student_name);
+      const key = String(student.student_id || "").trim();
       const attempt = latestMap.get(key) || null;
-      const submitted = !!(attempt && (attempt.status === "submitted" || attempt.is_submitted === true || attempt.submitted_at));
+      const submitted = !!(attempt && (attempt.status === "submitted" || attempt.status === "time_expired" || attempt.submitted_at));
       return {
         stt: idx + 1,
         student_name: student.student_name || "",
         student_code: student.student_code || "",
         correct_count: submitted
-          ? (Number.isFinite(Number(attempt?.correct_count)) ? Number(attempt.correct_count) : (Number.isFinite(Number(attempt?.correct)) ? Number(attempt.correct) : "-"))
+          ? (Number.isFinite(Number(attempt?.correct_count)) ? Number(attempt.correct_count) : "-")
           : "-",
         score: submitted ? (attempt?.score ?? 0) : "-",
         status: submitted ? "submitted" : (attempt?.status || "not_started"),
@@ -1331,7 +1385,7 @@ Schema:
     const tbody = el("eva-results-tbody");
     if (!tbody) return;
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:18px;color:#9ca3af;text-align:center;">Chua co du lieu de hien thi.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:18px;color:#9ca3af;text-align:center;">Chưa có dữ liệu để hiển thị.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map((row, index) => {
@@ -1354,17 +1408,17 @@ Schema:
     const host = el("eva-results-summary");
     if (!host) return;
     if (!latestRenderedRows.length) {
-      host.textContent = "Nhap ma phong hoac ten lop de xem bang diem.";
+      host.textContent = "Nhập mã phòng hoặc tên lớp để xem bảng điểm.";
       return;
     }
     const submitted = latestRenderedRows.filter((row) => row.status === "submitted");
     const numericScores = submitted.map((row) => Number(row.score)).filter(Number.isFinite);
     const avg = numericScores.length ? (numericScores.reduce((sum, item) => sum + item, 0) / numericScores.length).toFixed(2) : "-";
-    host.textContent = `${latestRenderedRows.length} hoc sinh | ${submitted.length} da nop | diem TB: ${avg}`;
+    host.textContent = `${latestRenderedRows.length} học sinh | ${submitted.length} đã nộp | điểm TB: ${avg}`;
   }
 
   function toResultsCsv(rows) {
-    const header = ["STT", "Ho ten", "So bao danh", "So cau dung", "Diem", "Trang thai", "Thoi gian nop"];
+    const header = ["STT", "Họ tên", "Số báo danh", "Số câu đúng", "Điểm", "Trạng thái", "Thời gian nộp"];
     const lines = [header.join(",")];
     rows.forEach((row, idx) => {
       const cols = [
@@ -1383,7 +1437,7 @@ Schema:
 
   function exportResultsCsv() {
     if (!latestRenderedRows.length) {
-      showResultsMessage("error", "Chua co du lieu de export.");
+      showResultsMessage("error", "Chưa có dữ liệu để xuất.");
       return;
     }
     const csv = toResultsCsv(latestRenderedRows);
@@ -1405,16 +1459,16 @@ Schema:
     const searchText = (el("eva-results-search-text")?.value || "").trim();
 
     if (!roomCode && !className) {
-      showResultsMessage("error", "Nhap ma phong hoac ten lop.");
+      showResultsMessage("error", "Nhập mã phòng hoặc tên lớp.");
       return;
     }
 
-    showResultsMessage("info", "Dang tai bang diem...");
+    showResultsMessage("info", "Đang tải bảng điểm...");
     try {
       let room = null;
       if (roomCode) room = await findRoomByCode(roomCode);
       if (!room && className) room = await findRoomByClassName(className);
-      if (!room) throw new Error("Khong tim thay phong thi phu hop.");
+      if (!room) throw new Error("Không tìm thấy phòng thi phù hợp.");
 
       const [students, attempts] = await Promise.all([
         fetchRoomStudents(room.id),
@@ -1425,7 +1479,7 @@ Schema:
       latestRenderedRows = applyResultsSearch(allLoadedRows, searchText);
       renderResultsTable(latestRenderedRows);
       renderResultsSummary();
-      showResultsMessage("info", `Da tai phong ${room.room_code || roomCode}${room.room_name ? ` - ${room.room_name}` : ""}.`);
+      showResultsMessage("info", `Đã tải phòng ${room.room_code || roomCode}${room.room_name ? ` - ${room.room_name}` : ""}.`);
       if (el("eva-results-room-code") && !el("eva-results-room-code").value) el("eva-results-room-code").value = room.room_code || "";
       if (el("eva-results-class-name") && !el("eva-results-class-name").value) el("eva-results-class-name").value = room.room_name || className;
     } catch (err) {
@@ -1433,7 +1487,7 @@ Schema:
       latestRenderedRows = [];
       renderResultsTable([]);
       renderResultsSummary();
-      showResultsMessage("error", err?.message || "Khong tai duoc bang diem.");
+      showResultsMessage("error", err?.message || "Không tải được bảng điểm.");
     }
   }
 
@@ -1460,7 +1514,185 @@ Schema:
     }, 80);
   }
 
+  function renderResultsSummary() {
+    const host = el("eva-results-summary");
+    if (!host) return;
+    if (!latestRenderedRows.length) {
+      host.textContent = "Chon lop va bai da giao de xem bang diem.";
+      return;
+    }
+    const submitted = latestRenderedRows.filter((row) => row.status === "submitted");
+    const numericScores = submitted.map((row) => Number(row.score)).filter(Number.isFinite);
+    const avg = numericScores.length ? (numericScores.reduce((sum, item) => sum + item, 0) / numericScores.length).toFixed(2) : "-";
+    host.textContent = `${latestRenderedRows.length} hoc sinh | ${submitted.length} da nop | Diem TB: ${avg}`;
+  }
+
+  function exportResultsCsv() {
+    if (!latestRenderedRows.length) {
+      showResultsMessage("error", "Chua co du lieu de xuat.");
+      return;
+    }
+    const csv = toResultsCsv(latestRenderedRows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const className = String(el("eva-results-class-select")?.selectedOptions?.[0]?.textContent || "lop").trim().replace(/[^\w\-]+/g, "_");
+    const assignmentId = String(el("eva-results-assignment-select")?.value || "assignment").trim();
+    a.href = url;
+    a.download = `eva_results_${className || "lop"}_${assignmentId || "assignment"}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function populateResultsClassOptions(preserveSelection = true) {
+    const select = el("eva-results-class-select");
+    if (!select) return [];
+    const previous = preserveSelection ? String(select.value || "").trim() : "";
+    const classes = getResultClassesFromLocal();
+    const unique = [];
+    const seen = new Set();
+    classes.forEach((cls) => {
+      const id = String(cls?.class_id || cls?.id || cls?.name || "").trim();
+      const name = String(cls?.name || cls?.class_name || "").trim();
+      if (!id || !name || seen.has(id)) return;
+      seen.add(id);
+      unique.push({ id, name });
+    });
+    select.innerHTML = '<option value="">Chon lop</option>' + unique.map((cls) => `<option value="${esc(cls.id)}">${esc(cls.name)}</option>`).join("");
+    if (previous && unique.some((cls) => cls.id === previous)) {
+      select.value = previous;
+    }
+    return unique;
+  }
+
+  async function populateResultsAssignmentOptions(classId, preserveSelection = false) {
+    const assignmentSelect = el("eva-results-assignment-select");
+    if (!assignmentSelect) return [];
+    const previous = preserveSelection ? String(assignmentSelect.value || "").trim() : "";
+    assignmentSelect.innerHTML = '<option value="">Dang tai bai da giao...</option>';
+    const classes = getResultClassesFromLocal();
+    const localClass = classes.find((cls) => String(cls?.class_id || cls?.id || cls?.name || "").trim() === String(classId || "").trim());
+    const className = String(localClass?.name || localClass?.class_name || "").trim();
+    if (!className) {
+      assignmentSelect.innerHTML = '<option value="">Chon bai da giao</option>';
+      return [];
+    }
+    const assignments = await fetchAssignmentsByClassName(className);
+    assignmentSelect.innerHTML = '<option value="">Chon bai da giao</option>' + assignments.map((item) => {
+      const due = item.due_at ? ` - Han ${formatResultsDate(item.due_at)}` : "";
+      return `<option value="${esc(item.id)}">${esc(item.title || "Bai tap")}${esc(due)}</option>`;
+    }).join("");
+    if (previous && assignments.some((item) => item.id === previous)) {
+      assignmentSelect.value = previous;
+    }
+    return assignments;
+  }
+
+  async function loadIntegratedResults() {
+    if (!(el("eva-results-class-select")?.options?.length > 1)) {
+      await prepareIntegratedResultsFilters();
+    }
+    const classId = (el("eva-results-class-select")?.value || "").trim();
+    const assignmentId = (el("eva-results-assignment-select")?.value || "").trim();
+    const searchText = (el("eva-results-search-text")?.value || "").trim();
+
+    if (!classId) {
+      showResultsMessage("error", "Chon lop truoc.");
+      return;
+    }
+    if (!assignmentId) {
+      showResultsMessage("error", "Chon bai da giao truoc.");
+      return;
+    }
+
+    showResultsMessage("info", "Dang tai bang diem...");
+    try {
+      const classes = getResultClassesFromLocal();
+      const localClass = classes.find((cls) => String(cls?.class_id || cls?.id || cls?.name || "").trim() === classId);
+      const className = String(localClass?.name || localClass?.class_name || "").trim();
+      if (!className) throw new Error("Khong tim thay lop da chon.");
+
+      const [profiles, attempts, assignments] = await Promise.all([
+        fetchStudentProfilesByClassName(className),
+        fetchAttemptsByAssignment(assignmentId),
+        fetchAssignmentsByClassName(className)
+      ]);
+      const currentAssignment = assignments.find((item) => item.id === assignmentId) || null;
+      if (!currentAssignment) throw new Error("Khong tim thay bai da giao trong lop nay.");
+
+      const roster = buildResultsRoster(localClass, profiles || []);
+      allLoadedRows = buildResultRows(roster || [], buildLatestAttemptMap(attempts || []));
+      latestRenderedRows = applyResultsSearch(allLoadedRows, searchText);
+      renderResultsTable(latestRenderedRows);
+      renderResultsSummary();
+      showResultsMessage("info", `Da tai bang diem lop ${className}${currentAssignment?.title ? ` - ${currentAssignment.title}` : ""}.`);
+    } catch (err) {
+      allLoadedRows = [];
+      latestRenderedRows = [];
+      renderResultsTable([]);
+      renderResultsSummary();
+      showResultsMessage("error", err?.message || "Khong tai duoc bang diem.");
+    }
+  }
+
+  function hydrateResultsFromLastSession() {
+    try {
+      const session = JSON.parse(localStorage.getItem("eva_last_online_exam_session") || "null");
+      if (!session) return;
+      const classSelect = el("eva-results-class-select");
+      if (!classSelect) return;
+      const classes = getResultClassesFromLocal();
+      const matched = classes.find((cls) => String(cls?.name || cls?.class_name || "").trim() === String(session.className || "").trim());
+      if (matched && !classSelect.value) {
+        classSelect.value = String(matched?.class_id || matched?.id || matched?.name || "").trim();
+      }
+    } catch {}
+  }
+
+  async function prepareIntegratedResultsFilters() {
+    await populateResultsClassOptions(true);
+    hydrateResultsFromLastSession();
+    const classId = String(el("eva-results-class-select")?.value || "").trim();
+    if (classId) {
+      const assignments = await populateResultsAssignmentOptions(classId, true);
+      const assignmentSelect = el("eva-results-assignment-select");
+      let sessionAssignmentId = "";
+      try {
+        const session = JSON.parse(localStorage.getItem("eva_last_online_exam_session") || "null");
+        sessionAssignmentId = String(session?.assignmentId || "").trim();
+      } catch {}
+      if (assignmentSelect && !assignmentSelect.value && sessionAssignmentId && assignments.some((item) => item.id === sessionAssignmentId)) {
+        assignmentSelect.value = sessionAssignmentId;
+      } else if (!assignmentSelect?.value && assignments.length === 1) {
+        assignmentSelect.value = assignments[0].id;
+      }
+    } else {
+      const assignmentSelect = el("eva-results-assignment-select");
+      if (assignmentSelect) assignmentSelect.innerHTML = '<option value="">Chon bai da giao</option>';
+    }
+  }
+
+  function openIntegratedResultsView(roomCode = "", className = "") {
+    if (typeof window.switchPage === "function") {
+      window.switchPage("results");
+    } else {
+      ensureScheduleUIInitialized();
+    }
+    setTimeout(async () => {
+      await prepareIntegratedResultsFilters();
+      if (el("eva-results-class-select")?.value && el("eva-results-assignment-select")?.value) {
+        void loadIntegratedResults();
+      } else {
+        renderResultsTable([]);
+        renderResultsSummary();
+      }
+    }, 80);
+  }
+
   window.openIntegratedResultsView = openIntegratedResultsView;
   window.loadIntegratedResults = loadIntegratedResults;
+  window.prepareIntegratedResultsFilters = prepareIntegratedResultsFilters;
 })();
 

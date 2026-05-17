@@ -3,7 +3,7 @@
   const MEMORY_KEY = "eva_chatbot_memory_items_v1";
   const AUTH_SESSION_KEY = "eva_auth_session_v1";
   const SETTINGS_THEME_KEY = "eva_settings_theme_v1";
-  const AUTH_API_URL = "https://eva1.phatho-vl.workers.dev/auth";
+  const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbz8Wn4WF9acglw7Xh4x1_2vDtHuI6IwlH0E0YiKl1Nc_T1oEGlrBbnaxUoOoRbXYK5g/exec";
   const DEFAULTS = {
     toneBase: "thang_than",
     warmth: "normal",
@@ -1316,14 +1316,23 @@
     body.set("action", action);
     body.set("username", username);
     body.set("password", password);
-    const res = await fetch(AUTH_API_URL, {
+    const requestInit = {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
       body: body.toString()
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
-    return data;
+    };
+
+    async function readAuthResponse(url) {
+      const res = await fetch(url, requestInit);
+      const data = await res.json().catch(() => ({}));
+      if (data && typeof data === "object" && !data.ok && /not found/i.test(String(data?.error || data?.message || ""))) {
+        throw new Error(data?.error || data?.message || "Not found");
+      }
+      if (!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      return data;
+    }
+
+    return await readAuthResponse(AUTH_API_URL);
   }
 
   function togglePasswordInput(inputId, btn) {
@@ -1496,7 +1505,12 @@
         if (el("eva-auth-register-pass2")) el("eva-auth-register-pass2").value = "";
         toast("Tạo tài khoản thành công.");
       } catch (err) {
-        setAuthStatus(`Đăng ký lỗi: ${err.message || err}`, "err");
+        const msg = String(err?.message || err || "");
+        if (/USERNAME_TAKEN|already exists|username already exists/i.test(msg)) {
+          setAuthStatus("Tên này đã có chủ sở hữu :)", "err");
+        } else {
+          setAuthStatus(`Đăng ký lỗi: ${msg}`, "err");
+        }
       }
     });
 

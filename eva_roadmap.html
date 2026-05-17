@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>window.MathJax={loader:{load:["[tex]/mhchem"]},tex:{packages:{"[+]":["mhchem"]},inlineMath:[["$","$"],["\\(","\\)"]],displayMath:[["$$","$$"],["\\[","\\]"]]},startup:{typeset:false}};</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -27,6 +28,11 @@
 .markdown-content h3,.markdown-content h4{font-weight:bold;color:#fff;margin-top:1rem;margin-bottom:0.5rem}
 .chat-menu-dropdown{animation:menuPop 0.2s ease-out;z-index:100;box-shadow:0 10px 25px -5px rgba(0,0,0,0.5)}
 @keyframes menuPop{from{opacity:0;transform:scale(0.95) translateY(-5px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.pulse-flame { animation: pulseFlame 1.5s infinite; }
+@keyframes pulseFlame { 0% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.2); filter: brightness(1.3); } 100% { transform: scale(1); filter: brightness(1); } }
+.slide-up { animation: slideUp 0.4s ease-out forwards; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.progress-ring__circle { transition: stroke-dashoffset 0.35s; transform: rotate(-90deg); transform-origin: 50% 50%; }
 </style>
 <style id="rm-dynamic-theme">
 /* Dynamic theme overrides applied via JS CSS vars */
@@ -131,6 +137,19 @@ window.addEventListener('storage', function(e) {
   if (e.key === EVA_AUTH_KEY) loadRoadmapAuth();
 });
 
+
+function goBackToMainEVA() {
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.switchPage === "function") {
+      window.parent.switchPage("chatbot");
+      return;
+    }
+  } catch (e) {}
+  try {
+    window.location.href = "EVA 1.html";
+  } catch (e) {}
+}
+
 // Init both on load
 document.addEventListener('DOMContentLoaded', function() {
   loadRoadmapTheme();
@@ -140,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <aside id="app-sidebar" class="w-20 md:w-64 glass-panel border-r border-eva-border flex flex-col transition-all duration-300 z-20 relative">
   <div class="h-20 flex items-center justify-center md:justify-between px-0 md:px-4 border-b border-eva-border">
     <div class="flex items-center justify-center">
-    <button onclick="try{window.parent.switchPage('chatbot');}catch(e){}" title="Quay về EVA chính" style="display:flex;align-items:center;background:none;border:none;cursor:pointer;padding:0;opacity:1;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+    <button onclick="goBackToMainEVA()" title="Quay về EVA chính" style="display:flex;align-items:center;background:none;border:none;cursor:pointer;padding:0;opacity:1;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
       <img src="logo.png" alt="EVA" class="w-10 h-10 rounded-xl object-cover shadow-[0_0_15px_rgba(108,99,255,0.5)]">
       <span class="hidden md:block ml-3 font-bold text-xl tracking-wider text-white" style="font-family:Orbitron,sans-serif;">EVA<span style="color:var(--eva-accent,#6c63ff)">.AI</span></span>
     </button>
@@ -183,8 +202,15 @@ document.addEventListener('DOMContentLoaded', function() {
       <div><h2 class="text-lg font-bold text-white" id="header-title">Hồ sơ: DẤU VÂN TAY TƯ DUY</h2><div class="text-xs text-gray-400 mt-1" id="header-subtitle">Trọng tâm: Chưa chọn</div></div>
     </div>
     <div class="flex items-center gap-4">
+      <div id="progress-container" class="hidden md:flex items-center gap-2 mr-2" title="Tiến trình học tập">
+        <svg class="w-8 h-8" viewBox="0 0 36 36">
+          <path class="text-gray-700" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          <path id="progress-ring-circle" class="text-eva-neon progress-ring__circle" stroke-dasharray="100, 100" stroke-dashoffset="100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+        </svg>
+        <span id="progress-text" class="text-xs font-bold text-eva-neon">0%</span>
+      </div>
       <button id="summarize-chat-btn" onclick="summarizeChatHistory()" class="hidden bg-eva-purple/20 hover:bg-eva-purple text-purple-300 hover:text-white border border-purple-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1.5">✨ Tóm tắt bài học</button>
-      <div class="hidden md:flex items-center gap-2" id="header-user-info"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span><span class="text-sm text-gray-300" id="header-username">Khach</span></div>
+      <div class="hidden md:flex items-center gap-2" id="header-user-info"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span><span class="text-sm text-gray-300" id="header-username">Khách</span></div>
     </div>
   </header>
   <div class="flex-1 overflow-y-auto p-4 md:p-6 relative">
@@ -238,36 +264,86 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="tab-profile" class="tab-content active flex-col w-full h-full max-w-5xl mx-auto">
       <div class="flex justify-center mb-6">
         <div class="bg-eva-panel border border-eva-border rounded-full p-1 flex">
-          <button onclick="switchProfileSubTab('hoso')" id="btn-sub-hoso" class="px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md">Hồ sơ người học</button>
-          <button onclick="switchProfileSubTab('kehoach')" id="btn-sub-kehoach" class="px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">Lên kế hoạch học tập</button>
+          <button onclick="switchProfileSubTab('hoso')" id="btn-sub-hoso" class="px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md">Hồ sơ học tập</button>
+          <button onclick="switchProfileSubTab('kehoach')" id="btn-sub-kehoach" class="px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">Lộ trình cá nhân</button>
         </div>
       </div>
       <!-- SUB-TAB HỒ SƠ -->
       <div id="sub-hoso" class="block w-full">
+        <div id="learning-context-banner" class="glass-panel rounded-2xl p-4 border border-eva-border mb-6 hidden">
+          <div class="hidden">
+            <div class="text-lg font-bold text-white" id="learning-context-name"></div>
+            <div class="text-sm text-gray-400" id="learning-context-meta"></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mt-4">
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Người học</label>
+              <input id="roadmap-learner-input" type="text" placeholder="Ví dụ: Phát" class="w-full bg-eva-dark border border-eva-border text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-eva-blue">
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Môn học</label>
+              <input id="roadmap-subject-input" type="text" placeholder="Ví dụ: Hóa học" class="w-full bg-eva-dark border border-eva-border text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-eva-blue">
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Lớp học</label>
+              <select id="roadmap-class-input" class="w-full bg-eva-dark border border-eva-border text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-eva-blue cursor-pointer">
+                <option value="">-- Chọn lớp --</option>
+                <option value="Lớp 5">Lớp 5</option>
+                <option value="Lớp 6">Lớp 6</option>
+                <option value="Lớp 7">Lớp 7</option>
+                <option value="Lớp 8">Lớp 8</option>
+                <option value="Lớp 9">Lớp 9</option>
+                <option value="Lớp 10">Lớp 10</option>
+                <option value="Lớp 11">Lớp 11</option>
+                <option value="Lớp 12">Lớp 12</option>
+                <option value="Tự do">Tự do</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-wider text-gray-400 font-bold mb-2">Khối kiến thức</label>
+              <select id="roadmap-grade-select" class="w-full bg-eva-dark border border-eva-border text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-eva-blue cursor-pointer">
+                <option value="">-- Chọn khối --</option>
+                <option value="Lớp 10">Lớp 10</option>
+                <option value="Lớp 11">Lớp 11</option>
+                <option value="Lớp 12">Lớp 12</option>
+                <option value="Đại học">Đại học</option>
+                <option value="Tự do">Tự do</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <button onclick="applyRoadmapSelection()" class="flex-1 px-4 py-2.5 rounded-xl bg-eva-purple/20 border border-purple-500/30 text-purple-300 text-sm font-semibold hover:bg-eva-purple/30 transition-all">
+                Áp dụng
+              </button>
+              <button onclick="syncRoadmapData(false)" class="flex-1 px-4 py-2.5 rounded-xl bg-eva-blue/20 border border-eva-blue/30 text-eva-neon text-sm font-semibold hover:bg-eva-blue/30 transition-all">
+                Đồng bộ
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6">
           <div class="col-span-1 md:col-span-2 glass-panel rounded-2xl p-6 border border-eva-border flex flex-col relative overflow-hidden">
             <div class="absolute top-0 right-0 w-64 h-64 bg-eva-blue opacity-10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            <h3 class="text-lg font-bold text-white mb-1">Radar Năng Lực Học Tập</h3>
-            <p class="text-sm text-gray-400 mb-6">AI EVA phân tích dựa trên lịch sử tương tác.</p>
+            <h3 class="text-lg font-bold text-white mb-1">Radar năng lực học tập</h3>
+            <p class="text-sm text-gray-400 mb-6">Tổng hợp từ dữ liệu học tập, bài nộp và lịch sử tương tác của người học.</p>
             <div class="flex-1 flex items-center justify-center relative min-h-[300px]"><canvas id="radarChart"></canvas></div>
           </div>
           <div class="space-y-6 flex flex-col">
             <div class="glass-panel rounded-2xl p-6 border border-eva-border">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider">Nhãn Tư Duy</h3>
+                <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider">Nhận học tập</h3>
                 <button onclick="analyzeLearningStyle()" id="btn-analyze" class="text-xs bg-eva-purple hover:bg-purple-500 text-white px-2 py-1 rounded transition-colors">✨ Quét Dữ Liệu</button>
               </div>
               <div id="tags-container" class="flex flex-wrap gap-2"><span class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-lg text-xs">Chưa có dữ liệu.</span></div>
             </div>
             <div class="glass-panel rounded-2xl p-6 border border-eva-border flex-1 flex flex-col">
-              <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider mb-4">Chỉ số sinh học</h3>
+              <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider mb-4">Tóm tắt học tập</h3>
               <div class="space-y-4 mb-6">
                 <div>
-                  <div class="flex justify-between text-sm mb-1"><span class="text-gray-300">Sức bền tập trung</span><span class="text-eva-neon font-bold" id="bio-focus-text">0%</span></div>
+                  <div class="flex justify-between text-sm mb-1"><span class="text-gray-300">Lý thuyết nền</span><span class="text-eva-neon font-bold" id="bio-focus-text">0%</span></div>
                   <div class="w-full bg-gray-800 rounded-full h-2"><div id="bio-focus-bar" class="bg-eva-neon h-2 rounded-full transition-all duration-1000" style="width:0%"></div></div>
                 </div>
                 <div>
-                  <div class="flex justify-between text-sm mb-1"><span class="text-gray-300">Tốc độ phản xạ</span><span class="text-purple-400 font-bold" id="bio-reflex-text">0%</span></div>
+                  <div class="flex justify-between text-sm mb-1"><span class="text-gray-300">Vận dụng cao</span><span class="text-purple-400 font-bold" id="bio-reflex-text">0%</span></div>
                   <div class="w-full bg-gray-800 rounded-full h-2"><div id="bio-reflex-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-1000" style="width:0%"></div></div>
                 </div>
               </div>
@@ -278,12 +354,41 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
         </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6">
+          <div class="glass-panel rounded-2xl p-6 border border-eva-border">
+            <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider mb-3">Điểm mạnh</h3>
+            <p id="learning-strengths" class="text-sm text-gray-300 leading-relaxed">Chưa có đánh giá.</p>
+          </div>
+          <div class="glass-panel rounded-2xl p-6 border border-eva-border">
+            <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider mb-3">Cần cải thiện</h3>
+            <p id="learning-gaps" class="text-sm text-gray-300 leading-relaxed">Chưa có dữ liệu.</p>
+          </div>
+          <div class="glass-panel rounded-2xl p-6 border border-eva-border">
+            <h3 class="text-sm font-bold uppercase text-gray-400 tracking-wider mb-3">Định hướng tiếp theo</h3>
+            <p id="learning-direction" class="text-sm text-gray-300 leading-relaxed">Chưa có gợi ý.</p>
+          </div>
+        </div>
       </div>
       <!-- SUB-TAB KẾ HOẠCH -->
       <div id="sub-kehoach" class="hidden w-full">
         <div class="glass-panel rounded-2xl p-6 border border-eva-border mb-10">
-          <div class="flex justify-between items-center mb-4 border-b border-eva-border pb-4">
+          <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4 border-b border-eva-border pb-4">
             <h3 class="text-lg font-bold text-white flex items-center gap-2"><svg class="w-5 h-5 text-eva-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>Cài Đặt Mục Tiêu & Kế Hoạch</h3>
+            <div class="flex flex-col sm:flex-row gap-3 md:min-w-[420px]">
+              <select id="roadmap-class-inline-input" class="flex-1 bg-eva-dark border border-eva-border rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-eva-blue cursor-pointer">
+                <option value="">-- Chọn lớp học --</option>
+                <option value="Lớp 5">Lớp 5</option>
+                <option value="Lớp 6">Lớp 6</option>
+                <option value="Lớp 7">Lớp 7</option>
+                <option value="Lớp 8">Lớp 8</option>
+                <option value="Lớp 9">Lớp 9</option>
+                <option value="Lớp 10">Lớp 10</option>
+                <option value="Lớp 11">Lớp 11</option>
+                <option value="Lớp 12">Lớp 12</option>
+                <option value="Tự do">Tự do</option>
+              </select>
+              <div id="roadmap-owner-chip" class="px-4 py-3 rounded-xl bg-eva-blue/10 border border-eva-blue/20 text-sm text-eva-neon whitespace-nowrap">Tài khoản: chưa xác định</div>
+            </div>
           </div>
           <div class="flex flex-col md:flex-row gap-4 mb-6 bg-gray-800/50 p-4 rounded-xl border border-gray-700">
             <div class="flex-1">
@@ -336,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="rename-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
   <div class="bg-eva-panel border border-eva-border rounded-2xl p-6 w-full max-w-sm shadow-2xl mx-4">
     <h3 class="text-lg font-bold text-white mb-2">Đổi Tên Đoạn Chat</h3>
-    <div class="flex justify-between items-center mb-4"><p class="text-sm text-gray-400">Nhập tên mới.</p><button onclick="suggestChatName()" id="btn-suggest-name" class="text-xs bg-eva-purple/20 hover:bg-eva-purple text-purple-400 hover:text-white px-2 py-1 rounded transition-all border border-purple-500/30">✨ AI Gợi ý</button></div>
+    <div class="flex justify-between items-center mb-4"><p class="text-sm text-gray-400">Nhập tên mới.</p><button onclick="suggestChatName()" id="btn-suggest-name" class="text-xs bg-eva-purple/20 hover:bg-eva-purple text-purple-400 hover:text-white px-2 py-1 rounded transition-all border border-purple-500/30">✨ AI Gợi Ý</button></div>
     <input type="text" id="rename-input" class="w-full bg-eva-dark border border-eva-border rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-eva-blue mb-4" placeholder="Nhập tên mới..." onkeypress="if(event.key==='Enter')saveRenameChat()">
     <div class="flex justify-end gap-3">
       <button onclick="closeRenameModal()" class="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800">Hủy</button>
@@ -353,11 +458,35 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 <script>
 // GLOBAL STATE
-const EVA_WORKER = "https://eva1.phatho-vl.workers.dev/chat";
+const EVA_WORKER_BASE = "https://eva1.phatho-vl.workers.dev";
+const EVA_WORKER_CHAT = EVA_WORKER_BASE + "/chat";
+const EVA_WORKER_TAVILY = EVA_WORKER_BASE + "/tavily-search";
+const EVA_SCHOOL_API_URL = "https://script.google.com/macros/s/AKfycbz8Wn4WF9acglw7Xh4x1_2vDtHuI6IwlH0E0YiKl1Nc_T1oEGlrBbnaxUoOoRbXYK5g/exec";
 const RM_STATE_KEY = 'eva_roadmap_state_v2';
+const RM_CONTEXT_KEY = 'eva_roadmap_context_v1';
 let chatHistories={"default":[]},chatSubjects={"default":""},chatCustomNames={},currentChatId="default";
 let currentSubject="",customKnowledge="",activeDays={},radarChartInstance=null,confirmCallback=null,currentRenameChatId=null,openMenuId=null;
-let currentUploadedImageBase64=null,currentUploadedImageMimeType=null,currentExerciseData=null;
+let currentUploadedImageBase64=null,currentUploadedImageMimeType=null,currentExerciseData=null,currentAssessmentMeta=null;
+let roadmapPlans={};
+let roadmapContext={user_id:"",student_id:"",class_id:"",subject:"",learner_name:"",grade_level:"",class_name:"",study_class:""};
+let roadmapSheetsProfileCache=null;
+
+function getRoadmapStorageSuffix() {
+  try {
+    const auth = JSON.parse(localStorage.getItem(EVA_AUTH_KEY) || 'null') || {};
+    return String(auth.id || 'guest').trim() || 'guest';
+  } catch (e) {
+    return 'guest';
+  }
+}
+
+function getRoadmapStateKey() {
+  return RM_STATE_KEY + '::' + getRoadmapStorageSuffix();
+}
+
+function getRoadmapContextKey() {
+  return RM_CONTEXT_KEY + '::' + getRoadmapStorageSuffix();
+}
 
 // ====== LOCALSTORAGE PERSISTENCE ======
 function saveRoadmapState() {
@@ -372,22 +501,26 @@ function saveRoadmapState() {
       chatSubjects,
       chatCustomNames,
       activeDays,
+      roadmapPlans,
       chatHistories: trimmedHistories,
       plansHtml: document.getElementById('plans-container')?.innerHTML || '',
       tags: document.getElementById('tags-container')?.innerHTML || '',
       insight: document.getElementById('eva-insight')?.innerHTML || '',
+      strengths: document.getElementById('learning-strengths')?.innerHTML || '',
+      gaps: document.getElementById('learning-gaps')?.innerHTML || '',
+      direction: document.getElementById('learning-direction')?.innerHTML || '',
       radarData: radarChartInstance?.data?.datasets?.[0]?.data || [0,0,0,0,0],
       focusVal: document.getElementById('bio-focus-text')?.innerText || '0%',
       reflexVal: document.getElementById('bio-reflex-text')?.innerText || '0%',
       savedAt: Date.now()
     };
-    localStorage.setItem(RM_STATE_KEY, JSON.stringify(state));
+    localStorage.setItem(getRoadmapStateKey(), JSON.stringify(state));
   } catch(e) {}
 }
 
 function loadRoadmapState() {
   try {
-    const raw = localStorage.getItem(RM_STATE_KEY);
+    const raw = localStorage.getItem(getRoadmapStateKey());
     if (!raw) return false;
     const s = JSON.parse(raw);
     if (!s || s.v !== 2) return false;
@@ -396,6 +529,7 @@ function loadRoadmapState() {
     if (s.chatSubjects) chatSubjects = s.chatSubjects;
     if (s.chatCustomNames) chatCustomNames = s.chatCustomNames;
     if (s.activeDays) activeDays = s.activeDays;
+    if (s.roadmapPlans) roadmapPlans = s.roadmapPlans;
     if (s.chatHistories) chatHistories = s.chatHistories;
     else chatHistories = {"default":[]};
     return s;
@@ -411,13 +545,18 @@ function restoreRoadmapUI(s) {
     document.getElementById('header-subtitle').innerText = 'Trọng tâm: ' + s.currentSubject;
   }
   // Plans
-  if (s.plansHtml) {
+  if (s.roadmapPlans && Object.keys(s.roadmapPlans).length) {
+    renderStoredPlans();
+  } else if (s.plansHtml) {
     const pc = document.getElementById('plans-container');
     if (pc) pc.innerHTML = s.plansHtml;
   }
   // Tags & Insight
   if (s.tags) { const el = document.getElementById('tags-container'); if(el) el.innerHTML = s.tags; }
   if (s.insight) { const el = document.getElementById('eva-insight'); if(el) el.innerHTML = s.insight; }
+  if (s.strengths) { const el = document.getElementById('learning-strengths'); if(el) el.innerHTML = s.strengths; }
+  if (s.gaps) { const el = document.getElementById('learning-gaps'); if(el) el.innerHTML = s.gaps; }
+  if (s.direction) { const el = document.getElementById('learning-direction'); if(el) el.innerHTML = s.direction; }
   // Radar
   if (s.radarData && radarChartInstance) {
     radarChartInstance.data.datasets[0].data = s.radarData;
@@ -435,6 +574,853 @@ function restoreRoadmapUI(s) {
     if(rb) rb.style.width = s.reflexVal;
   }
   updateSidebarHistory();
+  setTimeout(updateProgressRing, 100);
+}
+
+function updateProgressRing() {
+  const pc = document.getElementById("progress-container");
+  if(!pc) return;
+  let totalDays = 0, completedDays = 0;
+  const plans = document.querySelectorAll(".day-card");
+  if(plans.length === 0) { pc.classList.add("hidden"); return; }
+  pc.classList.remove("hidden");
+  plans.forEach(card => {
+    totalDays++;
+    if(card.classList.contains("bg-green-900/10")) completedDays++;
+  });
+  const pct = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+  document.getElementById("progress-text").innerText = pct + "%";
+  const circle = document.getElementById("progress-ring-circle");
+  if(circle) circle.style.strokeDashoffset = 100 - pct;
+}
+
+function getRoadmapContext() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    const fromQuery = {
+      user_id: norm_(params.get('user_id') || ''),
+      student_id: norm_(params.get('student_id') || ''),
+      class_id: norm_(params.get('class_id') || ''),
+      subject: norm_(params.get('subject') || ''),
+      learner_name: norm_(params.get('learner_name') || params.get('student_name') || ''),
+      grade_level: norm_(params.get('grade_level') || ''),
+      study_class: norm_(params.get('study_class') || params.get('class_name') || '')
+    };
+    const fromStorage = JSON.parse(localStorage.getItem(getRoadmapContextKey()) || 'null') || {};
+    const auth = JSON.parse(localStorage.getItem(EVA_AUTH_KEY) || 'null') || {};
+    roadmapContext = {
+      user_id: norm_(fromQuery.user_id || fromStorage.user_id || auth.id || ''),
+      student_id: norm_(fromQuery.student_id || fromStorage.student_id || ''),
+      class_id: norm_(fromQuery.class_id || fromStorage.class_id || ''),
+      subject: norm_(fromQuery.subject || fromStorage.subject || currentSubject || ''),
+      learner_name: norm_(fromQuery.learner_name || fromStorage.learner_name || fromStorage.student_name || auth.student_name || auth.username || ''),
+      grade_level: norm_(fromQuery.grade_level || fromStorage.grade_level || ''),
+      study_class: norm_(fromQuery.study_class || fromStorage.study_class || '')
+    };
+    if (roadmapContext.user_id || roadmapContext.learner_name || roadmapContext.subject || roadmapContext.grade_level || roadmapContext.study_class) {
+      localStorage.setItem(getRoadmapContextKey(), JSON.stringify(roadmapContext));
+    }
+  } catch(e) {
+    roadmapContext = {user_id:"",student_id:"",class_id:"",subject:currentSubject||"",learner_name:"",grade_level:"",class_name:"",study_class:""};
+  }
+  return roadmapContext;
+}
+
+function updateLearningContextBanner() {
+  const ctx = getRoadmapContext();
+  const banner = document.getElementById('learning-context-banner');
+  const nameEl = document.getElementById('learning-context-name');
+  const metaEl = document.getElementById('learning-context-meta');
+  if (!banner || !nameEl || !metaEl) return;
+  if (ctx.user_id || ctx.learner_name || ctx.subject || ctx.grade_level || ctx.study_class) {
+    banner.classList.remove('hidden');
+    nameEl.innerText = ctx.learner_name || 'Người học đang được theo dõi';
+    const meta = [];
+    if (ctx.grade_level) meta.push('Khối: ' + ctx.grade_level);
+    if (ctx.subject) meta.push('Môn: ' + ctx.subject);
+    if (ctx.study_class) meta.push('Lớp: ' + ctx.study_class);
+    if (ctx.user_id) meta.push('Tài khoản ID: ' + ctx.user_id);
+    if (!meta.length) meta.push('Đang dùng hồ sơ cá nhân cục bộ trên thiết bị này');
+    metaEl.innerText = meta.join(' | ');
+  } else {
+    banner.classList.add('hidden');
+  }
+  const learnerInput = document.getElementById('roadmap-learner-input');
+  if (learnerInput && ctx.learner_name && learnerInput.value !== ctx.learner_name) learnerInput.value = ctx.learner_name;
+  const classInput = document.getElementById('roadmap-class-input');
+  if (classInput && ctx.study_class && classInput.value !== ctx.study_class) classInput.value = ctx.study_class;
+  const inlineClassInput = document.getElementById('roadmap-class-inline-input');
+  if (inlineClassInput && ctx.study_class && inlineClassInput.value !== ctx.study_class) inlineClassInput.value = ctx.study_class;
+  const subjectInput = document.getElementById('roadmap-subject-input');
+  if (subjectInput && ctx.subject && subjectInput.value !== ctx.subject) subjectInput.value = ctx.subject;
+  const gradeSelect = document.getElementById('roadmap-grade-select');
+  if (gradeSelect && ctx.grade_level && gradeSelect.value !== ctx.grade_level) gradeSelect.value = ctx.grade_level;
+  const ownerChip = document.getElementById('roadmap-owner-chip');
+  if (ownerChip) ownerChip.innerText = 'Tài khoản: ' + (ctx.learner_name || 'chưa xác định') + (ctx.user_id ? ' | ID: ' + ctx.user_id : '');
+}
+
+function applyRoadmapSelection() {
+  const learnerInput = document.getElementById('roadmap-learner-input');
+  const classInput = document.getElementById('roadmap-class-input');
+  const inlineClassInput = document.getElementById('roadmap-class-inline-input');
+  const subjectInput = document.getElementById('roadmap-subject-input');
+  const gradeSelect = document.getElementById('roadmap-grade-select');
+  const auth = JSON.parse(localStorage.getItem(EVA_AUTH_KEY) || 'null') || {};
+  const classValue = norm_(inlineClassInput?.value || classInput?.value || roadmapContext.study_class || '');
+  const resolvedGradeLevel = norm_(gradeSelect?.value || classValue || roadmapContext.grade_level || '');
+  roadmapContext = {
+    user_id: norm_(roadmapContext.user_id || auth.id || ''),
+    student_id: norm_(roadmapContext.student_id || ''),
+    class_id: norm_(roadmapContext.class_id || ''),
+    subject: norm_(subjectInput?.value || currentSubject || ''),
+    learner_name: norm_(learnerInput?.value || roadmapContext.learner_name || auth.username || ''),
+    grade_level: resolvedGradeLevel,
+    class_name: "",
+    study_class: classValue
+  };
+  if (classInput && classInput.value !== classValue) classInput.value = classValue;
+  if (inlineClassInput && inlineClassInput.value !== classValue) inlineClassInput.value = classValue;
+  if (gradeSelect && gradeSelect.value !== resolvedGradeLevel) gradeSelect.value = resolvedGradeLevel;
+  currentSubject = roadmapContext.subject || currentSubject;
+  localStorage.setItem(getRoadmapContextKey(), JSON.stringify(roadmapContext));
+  const subjSel = document.getElementById('subject-selector');
+  if (subjSel && roadmapContext.subject) subjSel.value = roadmapContext.subject;
+  updateLearningContextBanner();
+  syncRoadmapData(false);
+}
+
+function getRoadmapKnowledgeScopeText() {
+  const ctx = getRoadmapContext();
+  const parts = [];
+  if (ctx.grade_level) parts.push("Khối kiến thức: " + ctx.grade_level);
+  if (ctx.study_class) parts.push("Lớp học: " + ctx.study_class);
+  if (ctx.subject) parts.push("Môn học: " + ctx.subject);
+  if (ctx.learner_name) parts.push("Người học: " + ctx.learner_name);
+  return parts.join(" | ");
+}
+
+async function fetchRoadmapApi(payload) {
+  const body = new URLSearchParams();
+  Object.entries(payload || {}).forEach(([key, value]) => body.set(key, String(value ?? '')));
+  const res = await fetch(EVA_SCHOOL_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body: body.toString()
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.ok) {
+    throw new Error(data?.error || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+function computeRadarFromProgress() {
+  let totalDays = 0, theoryDoneDays = 0, completedDays = 0;
+  let totalChecklist = 0, doneChecklist = 0;
+  let pretestScores = [], posttestScores = [];
+  let totalChatMessages = 0;
+
+  Object.keys(roadmapPlans || {}).forEach(function(planId) {
+    const plan = roadmapPlans[planId];
+    if (!plan || !plan.data) return;
+    const progress = ensurePlanProgress(planId);
+    const days = Array.isArray(plan.data.days) ? plan.data.days : [];
+    totalDays += days.length;
+
+    days.forEach(function(day) {
+      const dp = progress?.days?.[String(day.day_number)] || {};
+      if (dp.theoryDone) theoryDoneDays++;
+      if (dp.completed) completedDays++;
+      const cl = Array.isArray(dp.checklist) ? dp.checklist : [];
+      totalChecklist += cl.length;
+      doneChecklist += cl.filter(Boolean).length;
+    });
+
+    const pre = progress?.pretest;
+    const post = progress?.posttest;
+    if (pre?.completed && pre?.total > 0) pretestScores.push(Math.round((pre.score / pre.total) * 100));
+    if (post?.completed && post?.total > 0) posttestScores.push(Math.round((post.score / post.total) * 100));
+  });
+
+  Object.values(chatHistories || {}).forEach(function(history) {
+    if (Array.isArray(history)) totalChatMessages += history.filter(function(m) { return m && m.role === 'user'; }).length;
+  });
+
+  const safeDiv = function(a, b) { return b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0; };
+  const avgArr = function(arr) { return arr.length > 0 ? Math.round(arr.reduce(function(a, b) { return a + b; }, 0) / arr.length) : 0; };
+
+  return {
+    ly_thuyet_nen: safeDiv(theoryDoneDays, totalDays),
+    tu_duy: avgArr(pretestScores.concat(posttestScores)),
+    phan_bien: Math.min(100, totalChatMessages * 5),
+    van_dung: safeDiv(doneChecklist, totalChecklist),
+    van_dung_cao: safeDiv(completedDays, totalDays)
+  };
+}
+
+function getCurrentInsightSnapshot() {
+  const insightText = norm_(document.getElementById('eva-insight')?.textContent || '');
+  const strengthsText = norm_(document.getElementById('learning-strengths')?.textContent || '');
+  const gapsText = norm_(document.getElementById('learning-gaps')?.textContent || '');
+  const directionText = norm_(document.getElementById('learning-direction')?.textContent || '');
+  return {
+    nhan_dinh: insightText && !/Hãy chat|Lỗi phân tích|EVA đang chờ/i.test(insightText) ? insightText.replace(/^"|"$/g, '') : '',
+    diem_manh: strengthsText && !/Chưa có/i.test(strengthsText) ? strengthsText : '',
+    lo_hong: gapsText && !/Chưa có/i.test(gapsText) ? gapsText : '',
+    dinh_huong: directionText && !/Chưa có/i.test(directionText) ? directionText : ''
+  };
+}
+
+function getRoadmapProfileSyncKey() {
+  return 'eva_roadmap_profile_sync_v1::' + getRoadmapStorageSuffix();
+}
+
+function applySheetsProfileToUi(profile) {
+  if (!profile) return;
+  roadmapSheetsProfileCache = profile;
+  if (radarChartInstance) {
+    radarChartInstance.data.datasets[0].data = [
+      Number(profile.ly_thuyet_nen) || 0,
+      Number(profile.tu_duy) || 0,
+      Number(profile.phan_bien) || 0,
+      Number(profile.van_dung) || 0,
+      Number(profile.van_dung_cao) || 0
+    ];
+    radarChartInstance.update();
+  }
+  const insightEl = document.getElementById('eva-insight');
+  const strengthsEl = document.getElementById('learning-strengths');
+  const gapsEl = document.getElementById('learning-gaps');
+  const directionEl = document.getElementById('learning-direction');
+  if (insightEl && profile.nhan_dinh) insightEl.textContent = profile.nhan_dinh;
+  if (strengthsEl && profile.diem_manh) strengthsEl.textContent = profile.diem_manh;
+  if (gapsEl && profile.lo_hong) gapsEl.textContent = profile.lo_hong;
+  if (directionEl && profile.dinh_huong) directionEl.textContent = profile.dinh_huong;
+  const ft = document.getElementById('bio-focus-text'), fb = document.getElementById('bio-focus-bar');
+  if (ft) ft.innerText = (Number(profile.ly_thuyet_nen) || 0) + '%';
+  if (fb) fb.style.width = (Number(profile.ly_thuyet_nen) || 0) + '%';
+  const rt = document.getElementById('bio-reflex-text'), rb = document.getElementById('bio-reflex-bar');
+  if (rt) rt.innerText = (Number(profile.van_dung_cao) || 0) + '%';
+  if (rb) rb.style.width = (Number(profile.van_dung_cao) || 0) + '%';
+}
+
+async function saveProfileToSheets(radarData, insightData) {
+  const ctx = getRoadmapContext();
+  const userId = ctx.user_id || ctx.learner_name || '';
+  if (!userId) return;
+
+  const cached = roadmapSheetsProfileCache || {};
+  const mergedInsights = {
+    nhan_dinh: insightData?.nhan_dinh || cached.nhan_dinh || '',
+    diem_manh: insightData?.diem_manh || cached.diem_manh || '',
+    lo_hong: insightData?.lo_hong || cached.lo_hong || '',
+    dinh_huong: insightData?.dinh_huong || cached.dinh_huong || ''
+  };
+
+  const payload = {
+    action: 'save_learning_profile',
+    user_id: userId,
+    student_id: userId,
+    ly_thuyet_nen: radarData?.ly_thuyet_nen || 0,
+    tu_duy: radarData?.tu_duy || 0,
+    phan_bien: radarData?.phan_bien || 0,
+    van_dung: radarData?.van_dung || 0,
+    van_dung_cao: radarData?.van_dung_cao || 0,
+    nhan_dinh: mergedInsights.nhan_dinh,
+    diem_manh: mergedInsights.diem_manh,
+    lo_hong: mergedInsights.lo_hong,
+    dinh_huong: mergedInsights.dinh_huong,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    await fetchRoadmapApi(payload);
+    roadmapSheetsProfileCache = { ...(roadmapSheetsProfileCache || {}), ...payload };
+  } catch (e) {
+    console.warn('saveProfileToSheets failed (non-critical):', e);
+  }
+}
+
+async function loadProfileFromSheets() {
+  const ctx = getRoadmapContext();
+  const userId = ctx.user_id || ctx.learner_name || '';
+  if (!userId) return null;
+
+  try {
+    const data = await fetchRoadmapApi({
+      action: 'get_learning_profile',
+      user_id: userId,
+      student_id: userId
+    });
+    if (!data?.ok || !data?.profile) return null;
+    roadmapSheetsProfileCache = data.profile;
+    return data.profile;
+  } catch (e) {
+    return null;
+  }
+}
+
+function maybeSyncProfileToSheets(radarData, insightData) {
+  try {
+    const key = getRoadmapProfileSyncKey();
+    const previous = JSON.parse(localStorage.getItem(key) || 'null') || {};
+    const current = {
+      ly_thuyet_nen: Number(radarData?.ly_thuyet_nen) || 0,
+      tu_duy: Number(radarData?.tu_duy) || 0,
+      phan_bien: Number(radarData?.phan_bien) || 0,
+      van_dung: Number(radarData?.van_dung) || 0,
+      van_dung_cao: Number(radarData?.van_dung_cao) || 0,
+      nhan_dinh: insightData?.nhan_dinh || '',
+      diem_manh: insightData?.diem_manh || '',
+      lo_hong: insightData?.lo_hong || '',
+      dinh_huong: insightData?.dinh_huong || ''
+    };
+    const numericKeys = ['ly_thuyet_nen', 'tu_duy', 'phan_bien', 'van_dung', 'van_dung_cao'];
+    const maxDelta = numericKeys.reduce(function(max, key) {
+      return Math.max(max, Math.abs((Number(previous[key]) || 0) - current[key]));
+    }, 0);
+    const textChanged = ['nhan_dinh', 'diem_manh', 'lo_hong', 'dinh_huong'].some(function(key) {
+      return norm_(previous[key]) !== norm_(current[key]);
+    });
+    if (maxDelta < 4 && !textChanged) return;
+    localStorage.setItem(key, JSON.stringify(current));
+    Promise.resolve().then(function() {
+      return saveProfileToSheets(radarData, insightData);
+    });
+  } catch (e) {
+    console.warn('maybeSyncProfileToSheets skipped:', e);
+  }
+}
+
+function refreshRadarFromProgress() {
+  const radar = computeRadarFromProgress();
+  const radarValues = [
+    Number(radar.ly_thuyet_nen) || 0,
+    Number(radar.tu_duy) || 0,
+    Number(radar.phan_bien) || 0,
+    Number(radar.van_dung) || 0,
+    Number(radar.van_dung_cao) || 0
+  ];
+  const shouldFallbackToSheets =
+    radarValues.every(function(v) { return v === 0; }) &&
+    roadmapSheetsProfileCache &&
+    [
+      Number(roadmapSheetsProfileCache.ly_thuyet_nen) || 0,
+      Number(roadmapSheetsProfileCache.tu_duy) || 0,
+      Number(roadmapSheetsProfileCache.phan_bien) || 0,
+      Number(roadmapSheetsProfileCache.van_dung) || 0,
+      Number(roadmapSheetsProfileCache.van_dung_cao) || 0
+    ].some(function(v) { return v > 0; });
+
+  if (shouldFallbackToSheets) {
+    applySheetsProfileToUi(roadmapSheetsProfileCache);
+    return {
+      ly_thuyet_nen: Number(roadmapSheetsProfileCache.ly_thuyet_nen) || 0,
+      tu_duy: Number(roadmapSheetsProfileCache.tu_duy) || 0,
+      phan_bien: Number(roadmapSheetsProfileCache.phan_bien) || 0,
+      van_dung: Number(roadmapSheetsProfileCache.van_dung) || 0,
+      van_dung_cao: Number(roadmapSheetsProfileCache.van_dung_cao) || 0
+    };
+  }
+
+  if (radarChartInstance) {
+    radarChartInstance.data.datasets[0].data = [
+      radar.ly_thuyet_nen,
+      radar.tu_duy,
+      radar.phan_bien,
+      radar.van_dung,
+      radar.van_dung_cao
+    ];
+    radarChartInstance.update();
+  }
+  const ft = document.getElementById('bio-focus-text'), fb = document.getElementById('bio-focus-bar');
+  if (ft) ft.innerText = radar.ly_thuyet_nen + '%';
+  if (fb) fb.style.width = radar.ly_thuyet_nen + '%';
+  const rt = document.getElementById('bio-reflex-text'), rb = document.getElementById('bio-reflex-bar');
+  if (rt) rt.innerText = radar.van_dung_cao + '%';
+  if (rb) rb.style.width = radar.van_dung_cao + '%';
+  maybeSyncProfileToSheets(radar, getCurrentInsightSnapshot());
+  return radar;
+}
+
+function normalizeAssessmentItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map(function(item) {
+    const options = Array.isArray(item?.options) ? item.options : [];
+    const normalizedOptions = options.map(function(opt) {
+      if (typeof opt === 'string') {
+        return { text: opt, isCorrect: false };
+      }
+      return {
+        text: String(opt?.text || ''),
+        isCorrect: opt?.isCorrect === true
+      };
+    });
+    if (!normalizedOptions.some(function(opt) { return opt.isCorrect; }) && normalizedOptions.length) {
+      normalizedOptions[0].isCorrect = true;
+    }
+    return {
+      question: String(item?.question || 'Câu hỏi đánh giá'),
+      options: normalizedOptions
+    };
+  }).filter(function(item) {
+    return item.question && item.options.length >= 2;
+  });
+}
+
+function normalizePlanData(data) {
+  const safe = data && typeof data === 'object' ? data : {};
+  const days = Array.isArray(safe.days) ? safe.days : [];
+  return {
+    intro: String(safe.intro || 'Lộ trình được EVA cá nhân hóa cho bạn.'),
+    pretest: normalizeAssessmentItems(safe.pretest || safe.entry_test || safe.assessment_start || []),
+    posttest: normalizeAssessmentItems(safe.posttest || safe.exit_test || safe.assessment_end || []),
+    days: days.map(function(day, index) {
+      const checklist = Array.isArray(day?.checklist) ? day.checklist : [];
+      return {
+        day_number: Number(day?.day_number) || index + 1,
+        name: String(day?.name || ('Ngày ' + (index + 1))),
+        focus: String(day?.focus || day?.name || ''),
+        action: String(day?.action || ''),
+        motivation: String(day?.motivation || 'Tuyet voi!'),
+        checklist: checklist.length ? checklist.map(function(item) { return String(item || '').trim(); }).filter(Boolean) : [
+          'Học phần nội dung chính của ngày',
+          'Làm bài tập liên quan',
+          'Tự đánh giá mức độ hiểu bài'
+        ]
+      };
+    })
+  };
+}
+
+function ensurePlanProgress(planId) {
+  const plan = roadmapPlans[planId];
+  if (!plan) return null;
+  if (!plan.progress || typeof plan.progress !== 'object') {
+    plan.progress = {};
+  }
+  if (!plan.progress.days || typeof plan.progress.days !== 'object') {
+    plan.progress.days = {};
+  }
+  if (!plan.progress.pretest) {
+    plan.progress.pretest = { completed: false, score: 0, total: plan.data?.pretest?.length || 0 };
+  }
+  if (!plan.progress.posttest) {
+    plan.progress.posttest = { completed: false, score: 0, total: plan.data?.posttest?.length || 0 };
+  }
+  (plan.data?.days || []).forEach(function(day) {
+    const key = String(day.day_number);
+    if (!plan.progress.days[key]) {
+      plan.progress.days[key] = {
+        checklist: day.checklist.map(function() { return false; }),
+        theoryDone: false,
+        completed: false
+      };
+    } else {
+      const existing = plan.progress.days[key];
+      existing.checklist = Array.isArray(existing.checklist) ? existing.checklist.slice(0, day.checklist.length) : [];
+      while (existing.checklist.length < day.checklist.length) existing.checklist.push(false);
+      if (typeof existing.theoryDone !== 'boolean') existing.theoryDone = false;
+      if (typeof existing.completed !== 'boolean') existing.completed = false;
+    }
+  });
+  return plan.progress;
+}
+
+function renderChecklistHtml(planId, day) {
+  const progress = ensurePlanProgress(planId);
+  const dayProgress = progress?.days?.[String(day.day_number)];
+  const items = day.checklist || [];
+  return items.map(function(item, index) {
+    const checked = dayProgress?.checklist?.[index] === true;
+    return '<label class="flex items-start gap-2 text-xs text-gray-300 bg-gray-800/50 border border-gray-700 rounded-lg px-3 py-2">'+
+      '<input type="checkbox" '+(checked ? 'checked ' : '')+'onchange="toggleChecklistItem(\''+planId+'\','+day.day_number+','+index+',this.checked)" class="mt-0.5 accent-blue-500">'+
+      '<span class="'+(checked ? 'line-through text-gray-500' : '')+'">'+item+'</span>'+
+    '</label>';
+  }).join('');
+}
+
+function renderAssessmentSummary(planId, type, label) {
+  const plan = roadmapPlans[planId];
+  const progress = ensurePlanProgress(planId);
+  const test = plan?.data?.[type] || [];
+  if (!test.length) return '';
+  const state = progress?.[type] || { completed: false, score: 0, total: test.length };
+  return '<div class="bg-gray-900/40 border border-gray-700 rounded-xl p-4 mb-4">'+
+    '<div class="flex items-center justify-between gap-3 flex-wrap">'+
+      '<div><div class="text-xs uppercase tracking-wider text-gray-400 font-bold">'+label+'</div>'+
+      '<div class="text-sm text-white mt-1">'+(state.completed ? ('Da hoan thanh: '+state.score+'/'+state.total) : ('San sang '+test.length+' cau hoi'))+'</div></div>'+
+      '<button onclick="startPlanAssessment(\''+planId+'\',\''+type+'\')" class="px-4 py-2 rounded-lg text-xs font-bold '+(type==='pretest'?'bg-orange-500/20 border border-orange-400/30 text-orange-300':'bg-emerald-500/20 border border-emerald-400/30 text-emerald-300')+'">'+
+      (state.completed ? 'Lam lai' : 'Bat dau')+
+      '</button></div></div>';
+}
+
+function renderStoredPlans() {
+  const pc = document.getElementById('plans-container');
+  if (!pc) return;
+  const ids = Object.keys(roadmapPlans);
+  pc.innerHTML = '';
+  ids.forEach(function(planId) {
+    const plan = roadmapPlans[planId];
+    if (!plan) return;
+    ensurePlanProgress(planId);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = renderRoadmapCards(planId, plan.subject, plan.goal, plan.data);
+    if (wrapper.firstElementChild) pc.appendChild(wrapper.firstElementChild);
+  });
+}
+
+function rerenderPlan(planId) {
+  const plan = roadmapPlans[planId];
+  if (!plan) return;
+  ensurePlanProgress(planId);
+  const existing = document.getElementById(planId);
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = renderRoadmapCards(planId, plan.subject, plan.goal, plan.data);
+  const next = wrapper.firstElementChild;
+  if (!next) return;
+  if (existing) existing.replaceWith(next);
+  else document.getElementById('plans-container')?.prepend(next);
+  updateSidebarHistory();
+  updateProgressRing();
+  saveRoadmapState();
+  refreshRadarFromProgress();
+}
+
+function toggleChecklistItem(planId, dayNumber, itemIndex, checked) {
+  const progress = ensurePlanProgress(planId);
+  const dayProgress = progress?.days?.[String(dayNumber)];
+  if (!dayProgress) return;
+  dayProgress.checklist[itemIndex] = checked === true;
+  saveRoadmapState();
+  refreshRadarFromProgress();
+}
+
+function allChecklistDone(planId, dayNumber) {
+  const progress = ensurePlanProgress(planId);
+  const dayProgress = progress?.days?.[String(dayNumber)];
+  if (!dayProgress) return false;
+  return Array.isArray(dayProgress.checklist) && dayProgress.checklist.length > 0 && dayProgress.checklist.every(Boolean);
+}
+
+function startPlanAssessment(planId, type) {
+  const plan = roadmapPlans[planId];
+  const items = plan?.data?.[type];
+  if (!Array.isArray(items) || !items.length) {
+    showCustomAlert('Bai kiem tra nay chua co du lieu.', 'Thong bao');
+    return;
+  }
+  currentAssessmentMeta = {
+    planId,
+    type,
+    title: type === 'pretest' ? 'Pre-test dau vao' : 'Post-test tong ket'
+  };
+  currentTestQuestions = items;
+  currentQuestionIndex = 0;
+  currentTestScore = 0;
+  currentExerciseFocus = currentAssessmentMeta.title;
+  switchTab('exercise');
+  renderCurrentQuestion();
+}
+
+function renderRoadmapCards(planId, subject, goal, data) {
+  data = normalizePlanData(data);
+  const progress = ensurePlanProgress(planId);
+  const nextDay = activeDays[planId] || 1;
+  const pretestPending = (data.pretest || []).length && !progress?.pretest?.completed;
+  const nextButtonText = pretestPending ? 'Lam pre-test' : (nextDay === 8 ? 'Mo post-test' : ('Tiep tuc ngay ' + nextDay + ' ▶'));
+  let html='<div id="'+planId+'" class="bg-eva-panel/80 border border-eva-border rounded-2xl p-4 md:p-5 text-sm text-gray-200 shadow-xl mb-6 relative group overflow-hidden"><button onclick="removePlan(\''+planId+'\')" class="absolute top-3 right-3 text-gray-500 hover:text-red-400 bg-gray-800 w-7 h-7 flex items-center justify-center rounded-full z-10 opacity-0 group-hover:opacity-100">x</button>';
+  html+='<div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-5 mb-5 shadow-xl relative overflow-hidden border border-white/10"><div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div><div class="flex items-center gap-3 mb-5 flex-wrap relative z-10"><h2 class="text-3xl font-black tracking-tight">'+subject+'</h2><span class="text-xs font-semibold bg-white/20 px-3 py-1.5 rounded-full border border-white/30">'+goal+'</span></div>';
+  html+='<div class="flex justify-between items-end mb-4 px-1 relative z-10"><span class="text-2xl font-bold flex items-center gap-1.5">🔥 Chuoi</span><button onclick="revealNextDay(\''+planId+'\')" class="text-xs font-bold bg-white text-purple-600 hover:bg-blue-50 px-4 py-2 rounded-full transition-all streak-next-text">'+nextButtonText+'</button></div>';
+  html+='<div class="flex justify-between items-center w-full mt-2 px-1 relative z-10">';
+  ["T2","T3","T4","T5","T6","T7","CN"].forEach(function(dl,idx){html+='<div class="flex flex-col items-center gap-1.5 streak-day w-full" data-day-index="'+idx+'"><span class="text-2xl flame-icon grayscale opacity-40 brightness-200 transition-all inline-block cursor-default">🔥</span><span class="text-[10px] font-semibold text-white/80">'+dl+'</span></div>';});
+  html+='</div></div>';
+  html+='<div class="flex items-start gap-3 mb-4 px-2"><p class="text-sm text-gray-300 italic leading-relaxed pt-1">"'+(data.intro || 'Lo trinh duoc EVA ca nhan hoa cho ban.')+'"</p></div>';
+  html+=renderAssessmentSummary(planId,'pretest','Bai kiem tra dau vao');
+  html+=renderAssessmentSummary(planId,'posttest','Bai kiem tra tong ket');
+  html+='<div class="space-y-3">';
+  (data.days || []).forEach(function(day){
+    const dayProgress = progress?.days?.[String(day.day_number)] || { completed:false, theoryDone:false, checklist:[] };
+    const isVisible = Number(day.day_number) <= nextDay;
+    const statusText = dayProgress.completed ? ('✨ '+(day.motivation || 'Tuyệt vời!')) : (dayProgress.theoryDone ? 'Đang giải Bài tập' : 'Đang học Lý thuyết');
+    const statusClass = dayProgress.completed
+      ? 'text-[10px] font-bold text-green-400 px-3 py-2 rounded bg-green-900/20 border border-green-500/50 status-text'
+      : dayProgress.theoryDone
+        ? 'text-[10px] font-semibold text-eva-purple px-2 py-1 rounded bg-eva-purple/10 border border-eva-purple/30 status-text'
+        : 'text-[10px] font-semibold text-eva-blue px-2 py-1 rounded bg-eva-blue/10 border border-eva-blue/30 status-text';
+    html+='<div class="bg-gray-900/40 p-4 rounded-xl border border-gray-700/60 day-card '+(isVisible?'':'hidden')+' '+(dayProgress.completed?'border-green-500/50 bg-green-900/10':'')+'" data-plan-id="'+planId+'" data-day="'+day.day_number+'" data-motivation="'+(day.motivation || '')+'">';
+    html+='<div class="flex justify-between items-center mb-2 gap-2 flex-col md:flex-row"><h4 class="font-bold text-white text-sm flex items-center gap-2"><span class="bg-eva-blue text-white text-xs px-2 py-0.5 rounded day-badge">Ngay '+day.day_number+'</span> '+day.name+'</h4><div class="flex items-center gap-2"><button onclick="regeneratePlanDay(\''+planId+'\','+day.day_number+')" class="text-[10px] font-semibold px-2 py-1 rounded bg-orange-500/10 border border-orange-400/30 text-orange-300 hover:bg-orange-500/20">Tao lai ngay</button><span class="'+statusClass+'">'+statusText+'</span></div></div>';
+    html+='<p class="text-xs text-gray-400 mb-3">'+(day.action || '')+'</p>';
+    html+='<div class="mb-3 space-y-2">'+renderChecklistHtml(planId, day)+'</div>';
+    html+='<div class="step-theory flex flex-col sm:flex-row gap-2"><button onclick="startPhase(\'theory\',\''+String(day.focus || '').replace(/'/g,"\\'")+'\',\''+planId+'\',this)" class="flex-1 bg-eva-blue/10 hover:bg-eva-blue/30 border border-eva-blue/40 text-blue-300 py-2 rounded-lg text-xs font-semibold transition-colors"><span class="btn-text">'+(dayProgress.theoryDone?'Tiep tuc Ly Thuyet':'Bat dau Ly Thuyet')+'</span></button><button onclick="completeTheory(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">'+(dayProgress.theoryDone?'Da xong Ly Thuyet':'Xong Ly Thuyet')+'</button></div>';
+    html+='<div class="step-exercise '+(dayProgress.theoryDone || dayProgress.completed ? 'flex' : 'hidden')+' flex-col sm:flex-row gap-2 mt-2"><button onclick="startPhase(\'exercise\',\''+String(day.focus || '').replace(/'/g,"\\'")+'\',\''+planId+'\')" class="flex-1 bg-eva-purple/10 hover:bg-eva-purple/30 border border-eva-purple/40 text-purple-300 py-2 rounded-lg text-xs font-semibold">Luyen Bai Tap</button><button onclick="completeDay(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">'+(dayProgress.completed?'Da ket thuc ngay hoc':'Hoan Thanh Ngay')+'</button></div>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+  return html;
+}
+
+function renderRoadmapFromApi(roadmap) {
+  const pc = document.getElementById('plans-container');
+  if (!pc) return;
+  if (!roadmap || !roadmap.roadmap_json) return;
+  try {
+    const data = normalizePlanData(JSON.parse(roadmap.roadmap_json));
+    const planId = roadmap.roadmap_id || ('plan_' + Date.now());
+    if (!activeDays[planId]) activeDays[planId] = 1;
+    chatSubjects[planId] = roadmap.subject || currentSubject || '';
+    roadmapPlans[planId] = {
+      subject: roadmap.subject || currentSubject || 'Lo trinh',
+      goal: roadmap.goal || 'Muc tieu hoc tap',
+      data,
+      roadmapId: roadmap.roadmap_id || '',
+      progress: roadmapPlans[planId]?.progress || null
+    };
+    ensurePlanProgress(planId);
+    pc.innerHTML = '';
+    rerenderPlan(planId);
+  } catch (e) {}
+}
+
+async function syncRoadmapData(silent = true) {
+  updateLearningContextBanner();
+  const ctx = getRoadmapContext();
+  if (!ctx.student_id || ctx.student_id === ctx.user_id) {
+    saveRoadmapState();
+    if (!silent) showCustomAlert('Lộ trình này đang chạy theo tài khoản người dùng hiện tại. Nếu muốn lưu cloud bằng chính tài khoản này, backend Google Sheet cần đổi schema từ student_id sang user_id.', 'Chế độ tài khoản');
+    return;
+  }
+  try {
+    const profileRes = await fetchRoadmapApi({ action: 'get_learning_profile', student_id: ctx.student_id });
+    const p = profileRes.profile || {};
+    if (radarChartInstance) {
+      radarChartInstance.data.datasets[0].data = [
+        num_(p.ly_thuyet_nen), num_(p.tu_duy), num_(p.phan_bien), num_(p.van_dung), num_(p.van_dung_cao)
+      ];
+      radarChartInstance.update();
+    }
+    const tagsEl = document.getElementById('tags-container');
+    if (tagsEl) {
+      const tags = [
+        p.ly_thuyet_nen >= 70 ? '#Nen-tang-on' : '#Can-cung-co-nen',
+        p.tu_duy >= 70 ? '#Tu-duy-tot' : '#Can-luyen-tu-duy',
+        p.van_dung_cao >= 70 ? '#Van-dung-cao-on' : '#Tang-bai-phan-hoa'
+      ];
+      tagsEl.innerHTML = tags.map(t => '<span class="px-3 py-1.5 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-lg text-xs font-mono">'+t+'</span>').join('');
+    }
+    const insightEl = document.getElementById('eva-insight');
+    if (insightEl) insightEl.innerHTML = '"' + (p.nhan_dinh || 'EVA đang chờ dữ liệu học tập để đưa ra nhận định.') + '"';
+    const strengthsEl = document.getElementById('learning-strengths');
+    const gapsEl = document.getElementById('learning-gaps');
+    const directionEl = document.getElementById('learning-direction');
+    if (strengthsEl) strengthsEl.innerText = p.diem_manh || 'Chưa có đánh giá.';
+    if (gapsEl) gapsEl.innerText = p.lo_hong || 'Chưa có dữ liệu.';
+    if (directionEl) directionEl.innerText = p.dinh_huong || 'Chưa có gợi ý.';
+    const ft = document.getElementById('bio-focus-text'), fb = document.getElementById('bio-focus-bar');
+    const rt = document.getElementById('bio-reflex-text'), rb = document.getElementById('bio-reflex-bar');
+    if (ft) ft.innerText = num_(p.ly_thuyet_nen) + '%';
+    if (fb) fb.style.width = num_(p.ly_thuyet_nen) + '%';
+    if (rt) rt.innerText = num_(p.van_dung_cao) + '%';
+    if (rb) rb.style.width = num_(p.van_dung_cao) + '%';
+
+    const roadmapRes = await fetchRoadmapApi({ action: 'get_student_roadmap', student_id: ctx.student_id, subject: ctx.subject || currentSubject || '' });
+    if (roadmapRes.roadmap) {
+      if (roadmapRes.roadmap.subject) currentSubject = roadmapRes.roadmap.subject;
+      const goalInput = document.getElementById('plan-goal');
+      if (goalInput && roadmapRes.roadmap.goal) goalInput.value = roadmapRes.roadmap.goal;
+      renderRoadmapFromApi(roadmapRes.roadmap);
+    }
+    saveRoadmapState();
+    if (!silent) showCustomAlert('Đã đồng bộ hồ sơ học tập và lộ trình cá nhân.', 'Đồng bộ thành công');
+  } catch (err) {
+    if (!silent) showCustomAlert('Không đồng bộ được dữ liệu roadmap: ' + (err?.message || err), 'Lỗi');
+  }
+}
+
+function getRoadmapOwnerId(ctxOverride){
+  const ctx = ctxOverride || getRoadmapContext();
+  return norm_(ctx.user_id || ctx.student_id || '');
+}
+
+function applyPersonalRoadmapLayout(){
+  const classInput = document.getElementById('roadmap-class-input');
+  const inlineClassInput = document.getElementById('roadmap-class-inline-input');
+  const learnerInput = document.getElementById('roadmap-learner-input');
+  const ownerChip = document.getElementById('roadmap-owner-chip');
+  const banner = document.getElementById('learning-context-banner');
+  if(classInput && classInput.parentElement) classInput.parentElement.style.display='none';
+  if(inlineClassInput) inlineClassInput.style.display='none';
+  if(learnerInput && learnerInput.parentElement) learnerInput.parentElement.style.display='none';
+  if(banner){
+    const grid = banner.querySelector('.grid');
+    if(grid){
+      grid.classList.remove('md:grid-cols-5');
+      grid.classList.remove('md:grid-cols-4');
+      grid.classList.add('md:grid-cols-3');
+    }
+  }
+  if(ownerChip){
+    ownerChip.className='px-4 py-3 rounded-xl bg-eva-blue/10 border border-eva-blue/20 text-sm text-eva-neon whitespace-nowrap shadow-sm';
+  }
+}
+
+function updateLearningContextBanner(){
+  applyPersonalRoadmapLayout();
+  const ctx=getRoadmapContext();
+  const banner=document.getElementById('learning-context-banner');
+  const nameEl=document.getElementById('learning-context-name');
+  const metaEl=document.getElementById('learning-context-meta');
+  if(!banner||!nameEl||!metaEl) return;
+  if(ctx.user_id||ctx.learner_name||ctx.subject||ctx.grade_level){
+    banner.classList.remove('hidden');
+    nameEl.innerText=ctx.learner_name||'Hồ sơ học tập cá nhân';
+    const meta=[];
+    if(ctx.subject) meta.push('Môn: '+ctx.subject);
+    if(ctx.grade_level) meta.push('Khối kiến thức: '+ctx.grade_level);
+    if(ctx.user_id) meta.push('Tài khoản ID: '+ctx.user_id);
+    if(!meta.length) meta.push('Đang dùng hồ sơ cá nhân cục bộ trên thiết bị này');
+    metaEl.innerText=meta.join(' | ');
+  } else {
+    banner.classList.add('hidden');
+  }
+  const learnerInput=document.getElementById('roadmap-learner-input');
+  if(learnerInput&&ctx.learner_name&&learnerInput.value!==ctx.learner_name) learnerInput.value=ctx.learner_name;
+  const subjectInput=document.getElementById('roadmap-subject-input');
+  if(subjectInput&&ctx.subject&&subjectInput.value!==ctx.subject) subjectInput.value=ctx.subject;
+  const gradeSelect=document.getElementById('roadmap-grade-select');
+  if(gradeSelect&&ctx.grade_level&&gradeSelect.value!==ctx.grade_level) gradeSelect.value=ctx.grade_level;
+  const ownerChip=document.getElementById('roadmap-owner-chip');
+  if(ownerChip) ownerChip.innerText='Tài khoản: '+(ctx.learner_name||'chưa xác định')+(ctx.user_id?' | ID: '+ctx.user_id:'');
+}
+
+function applyRoadmapSelection(){
+  const learnerInput=document.getElementById('roadmap-learner-input');
+  const subjectInput=document.getElementById('roadmap-subject-input');
+  const gradeSelect=document.getElementById('roadmap-grade-select');
+  const auth=JSON.parse(localStorage.getItem(EVA_AUTH_KEY)||'null')||{};
+  const resolvedGradeLevel=norm_(gradeSelect?.value||roadmapContext.grade_level||'');
+  roadmapContext={
+    user_id:norm_(roadmapContext.user_id||auth.id||''),
+    student_id:norm_(roadmapContext.user_id||roadmapContext.student_id||auth.id||''),
+    class_id:'',
+    subject:norm_(subjectInput?.value||currentSubject||''),
+    learner_name:norm_(learnerInput?.value||roadmapContext.learner_name||auth.username||''),
+    grade_level:resolvedGradeLevel,
+    class_name:'',
+    study_class:''
+  };
+  if(gradeSelect&&gradeSelect.value!==resolvedGradeLevel) gradeSelect.value=resolvedGradeLevel;
+  currentSubject=roadmapContext.subject||currentSubject;
+  localStorage.setItem(getRoadmapContextKey(), JSON.stringify(roadmapContext));
+  const subjSel=document.getElementById('subject-selector');
+  if(subjSel&&roadmapContext.subject) subjSel.value=roadmapContext.subject;
+  updateLearningContextBanner();
+  syncRoadmapData(false);
+}
+
+function getRoadmapKnowledgeScopeText(){
+  const ctx=getRoadmapContext();
+  const parts=[];
+  if(ctx.grade_level) parts.push('Khối kiến thức: '+ctx.grade_level);
+  if(ctx.subject) parts.push('Môn học: '+ctx.subject);
+  if(ctx.learner_name) parts.push('Người học: '+ctx.learner_name);
+  return parts.join(' | ');
+}
+
+async function syncRoadmapData(silent=true){
+  updateLearningContextBanner();
+  const ctx=getRoadmapContext();
+  const ownerId=getRoadmapOwnerId(ctx);
+  if(!ownerId){
+    saveRoadmapState();
+    if(!silent) showCustomAlert('Lộ trình cá nhân hiện chưa có user_id để đồng bộ cloud.', 'Thiếu tài khoản');
+    return;
+  }
+  try{
+    const p=(await loadProfileFromSheets())||{};
+    if(p) applySheetsProfileToUi(p);
+    const tagsEl=document.getElementById('tags-container');
+    if(tagsEl){
+      const tags=[num_(p?.ly_thuyet_nen)>=70?'#Nen-tang-on':'#Can-cung-co-nen',num_(p?.tu_duy)>=70?'#Tu-duy-tot':'#Can-luyen-tu-duy',num_(p?.van_dung_cao)>=70?'#Van-dung-cao-on':'#Tang-bai-phan-hoa'];
+      tagsEl.innerHTML=tags.map(t=>'<span class="px-3 py-1.5 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-lg text-xs font-mono">'+t+'</span>').join('');
+    }
+    const insightEl=document.getElementById('eva-insight');
+    if(insightEl) insightEl.innerHTML='"'+(p.nhan_dinh||'EVA đang chờ dữ liệu học tập để đưa ra nhận định.')+'"';
+    const strengthsEl=document.getElementById('learning-strengths');
+    const gapsEl=document.getElementById('learning-gaps');
+    const directionEl=document.getElementById('learning-direction');
+    if(strengthsEl) strengthsEl.innerText=p.diem_manh||'Chưa có đánh giá.';
+    if(gapsEl) gapsEl.innerText=p.lo_hong||'Chưa có dữ liệu.';
+    if(directionEl) directionEl.innerText=p.dinh_huong||'Chưa có gợi ý.';
+    const ft=document.getElementById('bio-focus-text'),fb=document.getElementById('bio-focus-bar');
+    const rt=document.getElementById('bio-reflex-text'),rb=document.getElementById('bio-reflex-bar');
+    if(ft) ft.innerText=num_(p.ly_thuyet_nen)+'%';
+    if(fb) fb.style.width=num_(p.ly_thuyet_nen)+'%';
+    if(rt) rt.innerText=num_(p.van_dung_cao)+'%';
+    if(rb) rb.style.width=num_(p.van_dung_cao)+'%';
+    if(!p?.nhan_dinh && insightEl) insightEl.innerHTML='"EVA đang chờ dữ liệu học tập để đưa ra nhận định."';
+    if(!p?.diem_manh && strengthsEl) strengthsEl.innerText='Chưa có đánh giá.';
+    if(!p?.lo_hong && gapsEl) gapsEl.innerText='Chưa có dữ liệu.';
+    if(!p?.dinh_huong && directionEl) directionEl.innerText='Chưa có gợi ý.';
+
+    const roadmapRes=await fetchRoadmapApi({action:'get_student_roadmap',student_id:ownerId,user_id:ownerId,subject:ctx.subject||currentSubject||''});
+    if(roadmapRes.roadmap){
+      if(roadmapRes.roadmap.subject) currentSubject=roadmapRes.roadmap.subject;
+      const goalInput=document.getElementById('plan-goal');
+      if(goalInput&&roadmapRes.roadmap.goal) goalInput.value=roadmapRes.roadmap.goal;
+      renderRoadmapFromApi(roadmapRes.roadmap);
+    }
+    refreshRadarFromProgress();
+    saveRoadmapState();
+    if(!silent) showCustomAlert('Đã đồng bộ hồ sơ học tập và lộ trình cá nhân.', 'Đồng bộ thành công');
+  }catch(err){
+    if(!silent) showCustomAlert('Không đồng bộ được dữ liệu roadmap: '+(err?.message||err), 'Lỗi');
+  }
+}
+
+const _syncRoadmapDataBase = syncRoadmapData;
+syncRoadmapData = async function(silent=true){
+  updateLearningContextBanner();
+  const ctx=getRoadmapContext();
+  const ownerId=getRoadmapOwnerId(ctx);
+  if(!ownerId){
+    saveRoadmapState();
+    if(!silent) showCustomAlert('Lá»™ trình cá nhân hiện chưa có user_id để đồng bá»™ cloud.', 'Thiếu tài khoản');
+    return;
+  }
+  try{
+    const sheetsProfile = await loadProfileFromSheets();
+    if(sheetsProfile) applySheetsProfileToUi(sheetsProfile);
+    const tagsEl=document.getElementById('tags-container');
+    if(tagsEl){
+      const p = sheetsProfile || {};
+      const tags=[num_(p.ly_thuyet_nen)>=70?'#Nen-tang-on':'#Can-cung-co-nen',num_(p.tu_duy)>=70?'#Tu-duy-tot':'#Can-luyen-tu-duy',num_(p.van_dung_cao)>=70?'#Van-dung-cao-on':'#Tang-bai-phan-hoa'];
+      tagsEl.innerHTML=tags.map(function(t){return'<span class="px-3 py-1.5 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-lg text-xs font-mono">'+t+'</span>';}).join('');
+    }
+    if(!sheetsProfile){
+      const insightEl=document.getElementById('eva-insight');
+      const strengthsEl=document.getElementById('learning-strengths');
+      const gapsEl=document.getElementById('learning-gaps');
+      const directionEl=document.getElementById('learning-direction');
+      if(insightEl) insightEl.innerHTML='"EVA đang chờ dữ liệu học tập để đưa ra nhận định."';
+      if(strengthsEl) strengthsEl.innerText='Chưa có đánh giá.';
+      if(gapsEl) gapsEl.innerText='Chưa có dữ liệu.';
+      if(directionEl) directionEl.innerText='Chưa có gợi ý.';
+    }
+    const roadmapRes=await fetchRoadmapApi({action:'get_student_roadmap',student_id:ownerId,user_id:ownerId,subject:ctx.subject||currentSubject||''});
+    if(roadmapRes.roadmap){
+      if(roadmapRes.roadmap.subject) currentSubject=roadmapRes.roadmap.subject;
+      const goalInput=document.getElementById('plan-goal');
+      if(goalInput&&roadmapRes.roadmap.goal) goalInput.value=roadmapRes.roadmap.goal;
+      renderRoadmapFromApi(roadmapRes.roadmap);
+    }
+    refreshRadarFromProgress();
+    saveRoadmapState();
+    if(!silent) showCustomAlert('Đã đồng bá»™ hồ sơ học tập và lá»™ trình cá nhân.', 'Đồng bá»™ thành công');
+  }catch(err){
+    try { await _syncRoadmapDataBase(silent); } catch (_fallbackErr) {}
+    if(!silent) showCustomAlert('Không đồng bá»™ được dữ liệu roadmap: '+(err?.message||err), 'Lỗi');
+  }
 }
 
 window.onload=()=>{
@@ -452,6 +1438,8 @@ window.onload=()=>{
   }
   // Auto-save every 30s
   setInterval(saveRoadmapState, 30000);
+  updateLearningContextBanner();
+  setTimeout(()=>syncRoadmapData(true), 300);
   window.addEventListener('click',(e)=>{ if(openMenuId&&!e.target.closest('.chat-menu-dropdown')&&!e.target.closest('button[onclick^="toggleChatMenu"]')) closeAllChatMenus(); });
 };
 
@@ -465,7 +1453,7 @@ async function fetchGeminiAPI(payload,retries=3){
   if(isJson)prompt+="\n\nTRẢ VỀ CHỈ JSON hợp lệ, không markdown, không giải thích.";
   for(let i=0;i<retries;i++){
     try{
-      const r=await fetch(EVA_WORKER,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,model:"gemini-3.1-flash-lite-preview",role:"user",task:"chat"})});
+      const r=await fetch(EVA_WORKER_CHAT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,model:"gemini-3.1-flash-lite-preview",role:"user",task:"chat"})});
       if(!r.ok)throw new Error("HTTP "+r.status);
       const d=await r.json();
       let t=d?.text??d?.response??d?.output??d?.message??"";
@@ -473,6 +1461,48 @@ async function fetchGeminiAPI(payload,retries=3){
       return t||"Không có phản hồi.";
     }catch(e){if(i===retries-1)return"Lỗi kết nối. Hãy thử lại sau!";await new Promise(r=>setTimeout(r,1000*(i+1)));}
   }
+}
+
+async function fetchTavilyResearch(query, options = {}) {
+  const cleanQuery = String(query || "").trim();
+  if (!cleanQuery) return null;
+  try {
+    const r = await fetch(EVA_WORKER_TAVILY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: cleanQuery,
+        topic: options.topic || "general",
+        searchDepth: options.searchDepth || "advanced",
+        maxResults: options.maxResults || 5,
+        includeDomains: options.includeDomains || [],
+        excludeDomains: options.excludeDomains || [],
+        includeRawContent: false
+      })
+    });
+    if (!r.ok) return null;
+    const data = await r.json().catch(() => null);
+    return data && data.ok ? data : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function buildResearchPromptBlock(research) {
+  if (!research || !Array.isArray(research.cleaned_context) || !research.cleaned_context.length) {
+    return "";
+  }
+  const lines = research.cleaned_context.map(function(item, index) {
+    return (
+      (index + 1) + ". " +
+      (item.title || "Tài liệu") +
+      " | " +
+      (item.snippet || "Không có tóm tắt") +
+      " | Nguồn: " +
+      (item.url || "")
+    );
+  });
+  return "\n\nNGUON NGOAI SACH TAVILY:\n" + lines.join("\n");
 }
 
 function showCustomAlert(message,title="Thông báo",isConfirm=false,onConfirm=null){
@@ -574,15 +1604,17 @@ function changeSubject(){
   currentSubject=document.getElementById("subject-selector").value;
   chatSubjects["default"]=currentSubject;
   delete chatCustomNames["default"];customKnowledge="";
+  roadmapContext.subject = currentSubject;
+  localStorage.setItem(getRoadmapContextKey(), JSON.stringify(roadmapContext));
   document.getElementById("knowledge-input").value="";
-  document.getElementById("header-subtitle").innerText="Trong tam: "+currentSubject;
+  document.getElementById("header-subtitle").innerText="Trọng tâm: "+currentSubject;
   var s=document.getElementById("knowledge-status");
-  if(s){s.innerText="Chua nap.";s.classList.remove("text-green-400");}
+  if(s){s.innerText="Chưa nạp.";s.classList.remove("text-green-400");}
   initChat(currentSubject);
   document.getElementById("deep-dive").classList.add("hidden");
   document.getElementById("deep-dive-btn-container").classList.add("hidden");
-  document.getElementById("tags-container").innerHTML='<span class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-lg text-xs">Chua co du lieu.</span>';
-  document.getElementById("eva-insight").innerHTML='"Hay chat de co du lieu."';
+  document.getElementById("tags-container").innerHTML='<span class="px-3 py-1.5 bg-gray-800 text-gray-400 border border-gray-700 rounded-lg text-xs">Chưa có dữ liệu.</span>';
+  document.getElementById("eva-insight").innerHTML='"Hãy chat để có dữ liệu."';
   if(radarChartInstance){radarChartInstance.data.datasets[0].data=[0,0,0,0,0];radarChartInstance.update();
     ["bio-focus-text","bio-reflex-text"].forEach(function(id){var el=document.getElementById(id);if(el)el.innerText="0%";});
     ["bio-focus-bar","bio-reflex-bar"].forEach(function(id){var el=document.getElementById(id);if(el)el.style.width="0%";});}
@@ -596,14 +1628,14 @@ function initChat(subject,isCustom){
   c.innerHTML="";c.classList.remove("hidden");
   var wm="",raw="";
   if(!subject){
-    wm='<div class="mb-3"><span class="bg-gray-700 text-gray-300 text-xs px-3 py-1.5 rounded-md border border-gray-600 font-semibold">CHUA CHON MON HOC</span></div><p class="mb-2">Xin chao! Hay chon mon hoc o tab Ca Nhan Hoa nhe!</p><div class="bg-gray-800/80 border border-gray-600 rounded-xl p-4 mt-2 flex items-center justify-between gap-4"><span class="text-sm text-gray-300">Thiet lap mon hoc ngay.</span><button onclick="switchTab(\'profile\');switchProfileSubTab(\'kehoach\');" class="bg-eva-blue hover:bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold">Chon Mon Hoc</button></div>';
-    raw="Chua chon mon.";
+    wm='<div class="mb-3"><span class="bg-gray-700 text-gray-300 text-xs px-3 py-1.5 rounded-md border border-gray-600 font-semibold">CHƯA CHỌN MÔN HỌC</span></div><p class="mb-2">Xin chào! Hãy chọn môn học ở tab Cá Nhân Hóa nhé!</p><div class="bg-gray-800/80 border border-gray-600 rounded-xl p-4 mt-2 flex items-center justify-between gap-4"><span class="text-sm text-gray-300">Thiết lập môn học ngay.</span><button onclick="switchTab(\'profile\');switchProfileSubTab(\'kehoach\');" class="bg-eva-blue hover:bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold">Chọn Môn Học</button></div>';
+    raw="Chưa chọn môn.";
   } else if(isCustom){
-    wm=parseMarkdownWithMath("EVA da nap xong tai lieu **"+subject+"**! Hay xem lai, minh se chuan bi cau hoi on tap nhe!");
-    raw="EVA da nap tai lieu "+subject;
+    wm=parseMarkdownWithMath("EVA đã nạp xong tài liệu **"+subject+"**! Hãy xem lại, mình sẽ chuẩn bị câu hỏi ôn tập nhé!");
+    raw="EVA đã nạp tài liệu "+subject;
   } else {
-    wm='<div class="mb-3"><span class="bg-blue-900/50 text-blue-400 text-xs px-3 py-1.5 rounded-md border border-blue-800/50 font-semibold">BUOC 1: LEN KHOACH</span></div><p class="mb-2">Xin chao! EVA san sang cho mon <strong>'+subject+'</strong>.</p><div class="bg-gray-800/80 border border-gray-600 rounded-xl p-4 flex items-center justify-between gap-4"><span class="text-sm text-gray-300">Tao lo trinh 7 ngay ngay!</span><button onclick="switchTab(\'profile\');switchProfileSubTab(\'kehoach\');" class="bg-eva-blue hover:bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold">Len Ke Hoach</button></div>';
-    raw="EVA san sang cho "+subject;
+    wm='<div class="mb-3"><span class="bg-blue-900/50 text-blue-400 text-xs px-3 py-1.5 rounded-md border border-blue-800/50 font-semibold">BƯỚC 1: LÊN KẾ HOẠCH</span></div><p class="mb-2">Xin chào! EVA sẵn sàng cho môn <strong>'+subject+'</strong>.</p><div class="bg-gray-800/80 border border-gray-600 rounded-xl p-4 flex items-center justify-between gap-4"><span class="text-sm text-gray-300">Tạo lộ trình 7 ngày ngay!</span><button onclick="switchTab(\'profile\');switchProfileSubTab(\'kehoach\');" class="bg-eva-blue hover:bg-blue-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold">Lên Kế Hoạch</button></div>';
+    raw="EVA sẵn sàng cho "+subject;
   }
   var d=document.createElement("div");d.className="flex gap-4";
   d.innerHTML='<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-eva-blue to-eva-purple flex-shrink-0 flex items-center justify-center text-white font-bold shadow-lg mt-1">E</div><div class="glass-panel p-5 rounded-2xl rounded-tl-none max-w-[85%] border-eva-blue/30 border"><div class="text-sm leading-relaxed text-gray-200 markdown-content">'+wm+'</div></div>';
@@ -614,8 +1646,8 @@ function openKnowledgeModal(){document.getElementById("knowledge-modal").classLi
 function closeKnowledgeModal(){document.getElementById("knowledge-modal").classList.add("hidden");}
 function loadKnowledge(){
   customKnowledge=document.getElementById("knowledge-input").value.trim();
-  if(customKnowledge){closeKnowledgeModal();initChat(currentSubject,true);var s=document.getElementById("knowledge-status");if(s){s.innerText="Da nap tai lieu";s.classList.add("text-green-400");}}
-  else showCustomAlert("Vui long nhap tai lieu!");
+  if(customKnowledge){closeKnowledgeModal();initChat(currentSubject,true);var s=document.getElementById("knowledge-status");if(s){s.innerText="Đã nạp tài liệu";s.classList.add("text-green-400");}}
+  else showCustomAlert("Vui lòng nhập tài liệu!");
 }
 function getEvaSystemPrompt(){
   var p="Ban la EVA, tro ly hoc tap thong minh chuyen mon "+( chatSubjects[currentChatId]||currentSubject)+". Quy tac: Xung la 'EVA', goi nguoi dung la 'ban'. Dung Markdown va LaTeX ($...$) cho cong thuc. Phan hoi ngan gon, ro rang.";
@@ -669,156 +1701,641 @@ function handleImageUpload(e){
 function clearImage(){currentUploadedImageBase64=null;currentUploadedImageMimeType=null;document.getElementById("image-upload").value="";document.getElementById("image-preview-container").classList.add("hidden");}
 </script>
 <script>
+var currentTestQuestions = [];
+var currentQuestionIndex = 0;
+var currentTestScore = 0;
+var currentExerciseFocus = "";
+
 async function generateDynamicExercise(focus){
-  if(!currentSubject){showCustomAlert("Vui long chon mon hoc truoc!");return;}
+  if(!currentSubject){showCustomAlert("Vui lòng chọn môn học trước!");return;}
+  currentAssessmentMeta = null;
+  currentExerciseFocus = focus;
   var c=document.getElementById("exercise-container");
-  c.innerHTML='<div class="py-10 text-eva-neon animate-pulse text-center font-bold">Dang nho EVA ra de...</div>';
+  c.innerHTML='<div class="py-10 text-eva-neon animate-pulse text-center font-bold">Đang nhờ EVA soạn bài kiểm tra 5 câu...</div>';
   document.getElementById("deep-dive-btn-container").classList.add("hidden");
   document.getElementById("deep-dive").classList.add("hidden");
-  var prompt="Ban la chuyen gia ra de thi mon "+currentSubject+". Tao 1 cau hoi trac nghiem (4 dap an, 1 dung) ve chu de: '"+focus+"'. Dung $...$ cho cong thuc. TRA VE JSON: {\"question\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":false},{\"text\":\"...\",\"isCorrect\":true},{\"text\":\"...\",\"isCorrect\":false},{\"text\":\"...\",\"isCorrect\":false}]}";
+  var prompt="Bạn là chuyên gia ra đề thi môn "+currentSubject+". Tạo 5 câu hỏi trắc nghiệm (mỗi câu 4 đáp án, 1 đúng) về chủ đề: '"+focus+"'. Dùng $...$ cho công thức. TRẢ VỀ JSON MỘT MẢNG 5 PHẦN TỬ: [{\"question\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":false},{\"text\":\"...\",\"isCorrect\":true},...]} ,...]";
   try{
     var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
-    var data=JSON.parse(res);currentExerciseData=data;
-    var labels=["A","B","C","D"];
-    var html='<div class="flex justify-between items-center mb-4"><span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">Chu de: '+focus+'</span></div><div class="text-lg text-white font-medium mb-6 markdown-content">'+parseMarkdownWithMath(data.question)+'</div><div class="space-y-3" id="options-container">';
-    data.options.forEach(function(o,i){html+='<button onclick="selectAnswerDynamic(this,'+o.isCorrect+')" class="w-full text-left p-4 rounded-xl border border-eva-border hover:bg-white/5 transition-all flex items-center gap-3"><span class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm shrink-0">'+labels[i]+'</span><span class="markdown-content">'+parseMarkdownWithMath(o.text)+'</span></button>';});
-    c.innerHTML=html+"</div>";if(window.MathJax)MathJax.typesetPromise([c]);
-  }catch(e){c.innerHTML='<div class="text-red-400 text-center py-10">Loi khi tao bai tap. Vui long thu lai!</div>';}
+    var data=JSON.parse(res);
+    if(!Array.isArray(data)) data = data.questions || data.items || [data];
+    currentTestQuestions=data;
+    currentQuestionIndex=0;
+    currentTestScore=0;
+    renderCurrentQuestion();
+  }catch(e){c.innerHTML='<div class="text-red-400 text-center py-10">Lỗi khi tạo bài tập. Vui lòng thử lại!</div>';}
 }
+
+function renderCurrentQuestion() {
+  var c=document.getElementById("exercise-container");
+  document.getElementById("deep-dive-btn-container").classList.add("hidden");
+  document.getElementById("deep-dive").classList.add("hidden");
+  
+  if(currentQuestionIndex >= currentTestQuestions.length) {
+     if (currentAssessmentMeta && roadmapPlans[currentAssessmentMeta.planId]) {
+       const plan = roadmapPlans[currentAssessmentMeta.planId];
+       const progress = ensurePlanProgress(currentAssessmentMeta.planId);
+       progress[currentAssessmentMeta.type] = {
+         completed: true,
+         score: currentTestScore,
+         total: currentTestQuestions.length
+       };
+      rerenderPlan(currentAssessmentMeta.planId);
+      refreshRadarFromProgress();
+     }
+     c.innerHTML='<div class="text-center py-10 slide-up"><h3 class="text-2xl font-bold text-white mb-2">Hoan thanh bai kiem tra!</h3><p class="text-eva-neon text-4xl font-black mb-2">' + currentTestScore + '/' + currentTestQuestions.length + '</p><p class="text-sm text-gray-300 mb-6">'+(currentAssessmentMeta ? currentAssessmentMeta.title : 'Bai kiem tra')+'</p><button onclick="'+(currentAssessmentMeta ? ("returnToPlan('"+currentAssessmentMeta.planId+"')") : "generateDynamicExercise(currentExerciseFocus)")+'" class="bg-eva-blue hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold">'+(currentAssessmentMeta ? 'Quay lai lo trinh' : 'Lam bai khac')+'</button></div>';
+     if(typeof confetti === 'function' && currentTestScore > 0) confetti({particleCount: 150, spread: 80});
+     currentAssessmentMeta = null;
+     return;
+  }
+  
+  var data = currentTestQuestions[currentQuestionIndex];
+  currentExerciseData = data; 
+  var labels=["A","B","C","D"];
+  var html='<div class="flex justify-between items-center mb-4"><span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">Chu de: '+currentExerciseFocus+'</span><span class="text-eva-blue font-bold text-sm">Cau '+(currentQuestionIndex+1)+'/'+currentTestQuestions.length+'</span></div><div class="text-lg text-white font-medium mb-6 markdown-content slide-up">'+parseMarkdownWithMath(data.question)+'</div><div class="space-y-3 slide-up" id="options-container">';
+  data.options.forEach(function(o,i){html+='<button onclick="selectAnswerDynamic(this,'+o.isCorrect+')" class="w-full text-left p-4 rounded-xl border border-eva-border hover:bg-white/5 transition-all flex items-center gap-3" data-correct="'+o.isCorrect+'"><span class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-sm shrink-0">'+labels[i]+'</span><span class="markdown-content">'+parseMarkdownWithMath(o.text)+'</span></button>';});
+  c.innerHTML=html+"</div>";
+  if(window.MathJax)MathJax.typesetPromise([c]);
+}
+
 function selectAnswerDynamic(btn,isCorrect){
   var btns=document.getElementById("options-container").querySelectorAll("button");
   btns.forEach(function(b){b.onclick=null;b.classList.remove("hover:bg-white/5");});
-  if(isCorrect){btn.classList.add("bg-green-600/20","border-green-500","text-green-400");btn.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-green-600");document.getElementById("deep-dive-btn-container").classList.remove("hidden");}
-  else{btn.classList.add("bg-red-600/20","border-red-500","text-red-400");btn.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-red-600");
-    btns.forEach(function(b){if(b.getAttribute("onclick")&&b.getAttribute("onclick").includes("true")){b.classList.add("border-green-500","text-green-400");b.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-green-600");}});}
+  
+  if(isCorrect){
+    currentTestScore++;
+    btn.classList.add("bg-green-600/20","border-green-500","text-green-400");
+    btn.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-green-600");
+    if (!currentAssessmentMeta) document.getElementById("deep-dive-btn-container").classList.remove("hidden");
+  } else {
+    btn.classList.add("bg-red-600/20","border-red-500","text-red-400");
+    btn.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-red-600");
+    btns.forEach(function(b){if(b.getAttribute("data-correct")==="true"){b.classList.add("border-green-500","text-green-400");b.querySelector("span.shrink-0").classList.replace("bg-gray-700","bg-green-600");}});
+  }
+  
+  var c = document.getElementById("exercise-container");
+  var nextBtn = document.createElement("button");
+  nextBtn.className = "mt-6 w-full bg-eva-blue hover:bg-blue-600 text-white font-bold py-3 rounded-xl slide-up";
+  nextBtn.innerText = currentQuestionIndex === currentTestQuestions.length - 1 ? "Xem diem" : "Cau tiep theo";
+  nextBtn.onclick = function() {
+      currentQuestionIndex++;
+      renderCurrentQuestion();
+  };
+  c.appendChild(nextBtn);
+}
+
+function returnToPlan(planId) {
+  currentAssessmentMeta = null;
+  switchTab('profile');
+  switchProfileSubTab('kehoach');
+  if (planId) {
+    const el = document.getElementById(planId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 async function generateDeepDive(){
-  var btn=document.getElementById("btn-deep-dive"),ot=btn.innerHTML;btn.innerHTML="Dang tong hop...";btn.disabled=true;
+  var btn=document.getElementById("btn-deep-dive"),ot=btn.innerHTML;btn.innerHTML="Đang tổng hợp...";btn.disabled=true;
   var co=currentExerciseData.options.find(function(o){return o.isCorrect;}).text;
-  var prompt="Hoc sinh vua lam dung cau: '"+currentExerciseData.question+"'. Dap an dung: '"+co+"'. Tao 1 cau hoi 'NEU NHU...' mo rong tu duy. Giang vien nhiet huyet, dung $ cho cong thuc.";
+  var prompt="Học sinh vừa làm đúng câu: '"+currentExerciseData.question+"'. Đáp án đúng: '"+co+"'. Tạo 1 câu hỏi 'NẾU NHƯ...' mở rộng tư duy. Giảng viên nhiệt huyết, dùng $ cho công thức.";
   var r=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}]});
   document.getElementById("deep-dive-btn-container").classList.add("hidden");
   var box=document.getElementById("deep-dive");box.classList.remove("hidden");
   var ft="";try{ft=parseMarkdownWithMath(r);}catch(e){ft=r;}
-  document.getElementById("deep-dive-text").innerHTML='<strong>NEU NHU:</strong><div class="markdown-content mt-2">'+ft+'</div>';
+  document.getElementById("deep-dive-text").innerHTML='<strong>NẾU NHƯ:</strong><div class="markdown-content mt-2">'+ft+'</div>';
   if(window.MathJax)MathJax.typesetPromise([document.getElementById("deep-dive-text")]);
   btn.innerHTML=ot;btn.disabled=false;
 }
 async function analyzeLearningStyle(){
   var hist=chatHistories[currentChatId];
-  if(!hist||hist.length<2){showCustomAlert("Hay chat them voi EVA truoc khi phan tich!","Chua du du lieu");return;}
-  var btn=document.getElementById("btn-analyze"),ot=btn.innerHTML;btn.innerHTML="Dang quet...";btn.disabled=true;
+  if(!hist||hist.length<2){showCustomAlert("Hãy chat thêm với EVA trước khi phân tích!","Chưa đủ dữ liệu");return;}
+  var btn=document.getElementById("btn-analyze"),ot=btn.innerHTML;btn.innerHTML="Đang quét...";btn.disabled=true;
   var conv=hist.map(function(m){return m.role+": "+m.parts[0].text;}).join("\n");
-  var prompt="Phan tich phong cach hoc cua hoc sinh dua tren:\n"+conv+"\nTRA VE JSON: {\"tags\":[\"#Tag1\",\"#Tag2\"],\"insight\":\"nhan xet\",\"stats\":[85,90,75,80,88]}";
+  const ctx = getRoadmapContext();
+  const gradeHint = ctx.grade_level ? (" cho " + ctx.grade_level) : "";
+  const analysisQuery = "chien luoc hoc tap thuc chien" + gradeHint + " mon " + (ctx.subject || currentSubject || "tong hop") + ", cach cai thien tu duy, van dung va van dung cao";
+  const research = await fetchTavilyResearch(analysisQuery, {
+    topic: "general",
+    searchDepth: "advanced",
+    maxResults: 4,
+    includeDomains: ["moet.gov.vn", "khanacademy.org", "coursera.org", "edutopia.org"]
+  });
+  var prompt="Phan tich phong cach hoc cua hoc sinh dua tren:\n"+conv+"\nGIOI HAN NOI DUNG: hay chi danh gia va goi y trong pham vi kien thuc phu hop voi "+(ctx.grade_level || "muc do hoc sinh hien tai")+" o mon "+(ctx.subject || currentSubject || "tong hop")+"."+buildResearchPromptBlock(research)+"\nTRA VE JSON: {\"tags\":[\"#Tag1\",\"#Tag2\"],\"insight\":\"nhan xet ngan\", \"strengths\":\"diem manh\", \"gaps\":\"lo hong can va\", \"direction\":\"dinh huong hoc tiep\", \"stats\":[ly_thuyet_nen,tu_duy,phan_bien,van_dung,van_dung_cao]}. Stats la 5 so tu 0-100 theo dung thu tu do.";
   try{
     var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
     var data=JSON.parse(res);
     document.getElementById("tags-container").innerHTML=data.tags.map(function(t){return'<span class="px-3 py-1.5 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-lg text-xs font-mono">'+t+'</span>';}).join("");
     document.getElementById("eva-insight").innerHTML='"'+data.insight+'"';
+    var strengthsEl=document.getElementById("learning-strengths"),gapsEl=document.getElementById("learning-gaps"),directionEl=document.getElementById("learning-direction");
+    if(strengthsEl) strengthsEl.innerText=data.strengths||"Chưa có đánh giá.";
+    if(gapsEl) gapsEl.innerText=data.gaps||"Chưa có dữ liệu.";
+    if(directionEl) directionEl.innerText=data.direction||"Chưa có gợi ý.";
     if(radarChartInstance&&data.stats&&data.stats.length===5){radarChartInstance.data.datasets[0].data=data.stats;radarChartInstance.update();
       var ft=document.getElementById("bio-focus-text"),fb=document.getElementById("bio-focus-bar");if(ft)ft.innerText=data.stats[0]+"%";if(fb)fb.style.width=data.stats[0]+"%";
       var rt=document.getElementById("bio-reflex-text"),rb=document.getElementById("bio-reflex-bar");if(rt)rt.innerText=data.stats[3]+"%";if(rb)rb.style.width=data.stats[3]+"%";}
-  }catch(e){document.getElementById("eva-insight").innerText="Loi phan tich.";}
+    const ownerId = getRoadmapOwnerId(ctx);
+    if (ownerId) {
+      try {
+        await fetchRoadmapApi({
+          action:'save_learning_profile',
+          student_id: ownerId,
+          user_id: ownerId,
+          class_id: '',
+          ly_thuyet_nen: data.stats?.[0] || 0,
+          tu_duy: data.stats?.[1] || 0,
+          phan_bien: data.stats?.[2] || 0,
+          van_dung: data.stats?.[3] || 0,
+          van_dung_cao: data.stats?.[4] || 0,
+          nhan_dinh: data.insight || '',
+          diem_manh: data.strengths || '',
+          lo_hong: data.gaps || '',
+          dinh_huong: data.direction || ''
+        });
+      } catch(saveErr) {
+        console.warn('save_learning_profile failed', saveErr);
+      }
+    }
+  }catch(e){document.getElementById("eva-insight").innerText="Lỗi phân tích.";}
   saveRoadmapState();
   btn.innerHTML=ot;btn.disabled=false;
+}
+
+const _analyzeLearningStyleBase = analyzeLearningStyle;
+analyzeLearningStyle = async function(){
+  var btn=document.getElementById("btn-analyze"),ot=btn.innerHTML;btn.innerHTML="Đang quét...";btn.disabled=true;
+  const ctx = getRoadmapContext();
+  const radar = computeRadarFromProgress();
+  refreshRadarFromProgress();
+  const sheetsProfile = await loadProfileFromSheets();
+  const now = Date.now();
+  const cacheAge = sheetsProfile?.updated_at ? now - new Date(sheetsProfile.updated_at).getTime() : Infinity;
+  const CACHE_TTL = 48 * 60 * 60 * 1000;
+  try{
+    if (sheetsProfile && cacheAge < CACHE_TTL && sheetsProfile.nhan_dinh) {
+      const effectiveRadar = Object.values(radar).every(function(v){ return Number(v || 0) === 0; })
+        ? {
+            ly_thuyet_nen: Number(sheetsProfile.ly_thuyet_nen) || 0,
+            tu_duy: Number(sheetsProfile.tu_duy) || 0,
+            phan_bien: Number(sheetsProfile.phan_bien) || 0,
+            van_dung: Number(sheetsProfile.van_dung) || 0,
+            van_dung_cao: Number(sheetsProfile.van_dung_cao) || 0
+          }
+        : radar;
+      applySheetsProfileToUi(sheetsProfile);
+      await saveProfileToSheets(effectiveRadar, sheetsProfile);
+      saveRoadmapState();
+      return;
+    }
+
+    var hist=chatHistories[currentChatId];
+    if(!hist||hist.length<2){showCustomAlert("Hãy chat thêm với EVA trước khi phân tích!","Chưa đủ dữ liệu");return;}
+    var conv=hist.map(function(m){return m.role+": "+m.parts[0].text;}).join("\n");
+    const gradeHint = ctx.grade_level ? (" cho " + ctx.grade_level) : "";
+    const analysisQuery = "chien luoc hoc tap thuc chien" + gradeHint + " mon " + (ctx.subject || currentSubject || "tong hop") + ", cach cai thien tu duy, van dung va van dung cao";
+    const research = await fetchTavilyResearch(analysisQuery, {
+      topic: "general",
+      searchDepth: "advanced",
+      maxResults: 4,
+      includeDomains: ["moet.gov.vn", "khanacademy.org", "coursera.org", "edutopia.org"]
+    });
+    var prompt="Phan tich phong cach hoc cua hoc sinh dua tren:\n"+conv+"\nRADAR THAT TU DU LIEU HOC TAP: "+JSON.stringify(radar)+"\nGIOI HAN NOI DUNG: hay chi danh gia va goi y trong pham vi kien thuc phu hop voi "+(ctx.grade_level || "muc do hoc sinh hien tai")+" o mon "+(ctx.subject || currentSubject || "tong hop")+"."+buildResearchPromptBlock(research)+"\nTRA VE JSON: {\"tags\":[\"#Tag1\",\"#Tag2\"],\"insight\":\"nhan xet ngan\", \"strengths\":\"diem manh\", \"gaps\":\"lo hong can va\", \"direction\":\"dinh huong hoc tiep\", \"stats\":[ly_thuyet_nen,tu_duy,phan_bien,van_dung,van_dung_cao]}. Stats la 5 so tu 0-100 theo dung thu tu do.";
+    var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    var data=JSON.parse(res);
+    document.getElementById("tags-container").innerHTML=data.tags.map(function(t){return'<span class="px-3 py-1.5 bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded-lg text-xs font-mono">'+t+'</span>';}).join("");
+    document.getElementById("eva-insight").innerHTML='"'+data.insight+'"';
+    var strengthsEl=document.getElementById("learning-strengths"),gapsEl=document.getElementById("learning-gaps"),directionEl=document.getElementById("learning-direction");
+    if(strengthsEl) strengthsEl.innerText=data.strengths||"Chưa có đánh giá.";
+    if(gapsEl) gapsEl.innerText=data.gaps||"Chưa có dữ liệu.";
+    if(directionEl) directionEl.innerText=data.direction||"Chưa có gợi ý.";
+    refreshRadarFromProgress();
+    const insightData = {
+      nhan_dinh: document.getElementById('eva-insight')?.textContent || '',
+      diem_manh: document.getElementById('learning-strengths')?.textContent || '',
+      lo_hong: document.getElementById('learning-gaps')?.textContent || '',
+      dinh_huong: document.getElementById('learning-direction')?.textContent || ''
+    };
+    await saveProfileToSheets(radar, insightData);
+  }catch(e){
+    try { return await _analyzeLearningStyleBase(); } catch (_fallbackErr) {
+      document.getElementById("eva-insight").innerText="Lỗi phân tích.";
+    }
+  }finally{
+    saveRoadmapState();
+    btn.innerHTML=ot;btn.disabled=false;
+  }
 }
 </script>
 <script>
 function startPhase(type,focus,planId,btn){
   if(type==="theory"){switchChatContext(planId);switchTab("theory");
-    var shouldSend=true;if(btn){if(!btn.getAttribute("data-started")){btn.setAttribute("data-started","true");var ts=btn.querySelector(".btn-text");if(ts)ts.innerText="Tiep tuc Ly Thuyet";}else{shouldSend=false;}}
-    if(shouldSend){document.getElementById("chat-input").value="EVA oi, hay giup minh bat dau hoc ly thuyet ve chuyen de: "+focus+" nhe!";sendChatMessage();}
+    var shouldSend=true;if(btn){if(!btn.getAttribute("data-started")){btn.setAttribute("data-started","true");var ts=btn.querySelector(".btn-text");if(ts)ts.innerText="Tiếp tục Lý Thuyết";}else{shouldSend=false;}}
+    if(shouldSend){document.getElementById("chat-input").value="EVA ơi, hãy giúp mình bắt đầu học lý thuyết về chuyên đề: "+focus+" nhé!";sendChatMessage();}
   } else if(type==="exercise"){currentSubject=chatSubjects[planId];switchTab("exercise");generateDynamicExercise(focus);}
 }
 async function generateStudyPlan(){
-  if(!currentSubject){showCustomAlert("Hay chon mon hoc truoc!","Thong bao");return;}
-  var goal=document.getElementById("plan-goal").value.trim();if(!goal){showCustomAlert("Hay nhap muc tieu truoc!","Thong bao");return;}
-  var btn=document.getElementById("btn-plan"),ot=btn.innerHTML;btn.innerHTML="Dang lap ke hoach...";btn.disabled=true;
+  if(!currentSubject){showCustomAlert("Hãy chọn môn học trước!","Thông báo");return;}
+  var goal=document.getElementById("plan-goal").value.trim();if(!goal){showCustomAlert("Hãy nhập mục tiêu trước!","Thông báo");return;}
+  var btn=document.getElementById("btn-plan"),ot=btn.innerHTML;btn.innerHTML="Đang lập kế hoạch...";btn.disabled=true;
   document.getElementById("plan-loading").classList.remove("hidden");
   var tc=document.getElementById("tags-container"),tl=Array.from(tc.querySelectorAll("span")).map(function(s){return s.innerText;}).join(", ");
-  var sc=tl.includes("Chua co")||tl.includes("Chua co du lieu")?"Hoc sinh moi bat dau.":"Phong cach hoc: "+tl;
-  var prompt="Ban la EVA, chuyen gia thiet ke lo trinh. Mon: "+currentSubject+". Muc tieu: "+goal+". "+sc+" Tao ke hoach 7 ngay (JSON): {\"intro\":\"dong vien\",\"days\":[{\"day_number\":1,\"name\":\"...\",\"focus\":\"...\",\"action\":\"...\",\"motivation\":\"...\"},...]}";
+  var sc=tl.includes("Chưa có")||tl.includes("Chưa có dữ liệu")?"Học sinh mới bắt đầu.":"Phong cách học: "+tl;
+  const ctx = getRoadmapContext();
+  const gradeHint = ctx.grade_level ? (" cho " + ctx.grade_level) : "";
+  const roadmapQuery = "lo trinh hoc " + currentSubject + gradeHint + " de dat muc tieu " + goal + ", phuong phap hoc, bai tap, chien luoc on tap va nang cao";
+  const research = await fetchTavilyResearch(roadmapQuery, {
+    topic: "general",
+    searchDepth: "advanced",
+    maxResults: 5,
+    includeDomains: ["moet.gov.vn", "khanacademy.org", "coursera.org", "edutopia.org"]
+  });
+  var prompt="Bạn là EVA, chuyên gia thiết kế lộ trình. Môn: "+currentSubject+". Mục tiêu: "+goal+". "+sc+"\nGIOI HAN NOI DUNG: chi duoc lap lo trinh trong pham vi kien thuc phu hop voi "+(ctx.grade_level || "muc do hoc sinh hien tai")+". Khong nhay coc sang noi dung qua tam voi muc do nay."+buildResearchPromptBlock(research)+"\nNeu co nguon ngoai thi uu tien chon cach hoc cap nhat, ro rang, thuc chien cho hoc sinh.\nTao roadmap 7 ngay va TRA VE CHUAN JSON theo dung schema nay: {\"intro\":\"dong vien ngan\",\"pretest\":[{\"question\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":true},{\"text\":\"...\",\"isCorrect\":false}]}],\"posttest\":[{\"question\":\"...\",\"options\":[{\"text\":\"...\",\"isCorrect\":true},{\"text\":\"...\",\"isCorrect\":false}]}],\"days\":[{\"day_number\":1,\"name\":\"...\",\"focus\":\"...\",\"action\":\"...\",\"motivation\":\"...\",\"checklist\":[\"viec 1\",\"viec 2\",\"viec 3\"]}]}. Moi ngay phai co 3-5 checklist cu the, hanh dong duoc.";
   try{
     var res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
-    var data=JSON.parse(res);
+    var data=normalizePlanData(JSON.parse(res));
     var planId="plan_"+Date.now();activeDays[planId]=1;chatSubjects[planId]=currentSubject;updateSidebarHistory();
-    var html='<div id="'+planId+'" class="bg-eva-panel/80 border border-eva-border rounded-2xl p-4 md:p-5 text-sm text-gray-200 shadow-xl mb-6 relative group overflow-hidden"><button onclick="removePlan(\''+planId+'\')" class="absolute top-3 right-3 text-gray-500 hover:text-red-400 bg-gray-800 w-7 h-7 flex items-center justify-center rounded-full z-10 opacity-0 group-hover:opacity-100">x</button>';
-    html+='<div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-5 mb-5 shadow-xl relative overflow-hidden border border-white/10"><div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div><div class="flex items-center gap-3 mb-5 flex-wrap relative z-10"><h2 class="text-3xl font-black tracking-tight">'+currentSubject+'</h2><span class="text-xs font-semibold bg-white/20 px-3 py-1.5 rounded-full border border-white/30">'+goal+'</span></div>';
-    html+='<div class="flex justify-between items-end mb-4 px-1 relative z-10"><span class="text-2xl font-bold flex items-center gap-1.5">🔥 Chuoi</span><button onclick="revealNextDay(\''+planId+'\')" class="text-xs font-bold bg-white text-purple-600 hover:bg-blue-50 px-4 py-2 rounded-full transition-all streak-next-text">Tiep tuc ngay 1 ▶</button></div>';
-    html+='<div class="flex justify-between items-center w-full mt-2 px-1 relative z-10">';
-    ["T2","T3","T4","T5","T6","T7","CN"].forEach(function(dl,idx){html+='<div class="flex flex-col items-center gap-1.5 streak-day w-full" data-day-index="'+idx+'"><span class="text-2xl flame-icon grayscale opacity-40 brightness-200 transition-all inline-block cursor-default">🔥</span><span class="text-[10px] font-semibold text-white/80">'+dl+'</span></div>';});
-    html+='</div></div>';
-    html+='<div class="flex items-start gap-3 mb-4 px-2"><p class="text-sm text-gray-300 italic leading-relaxed pt-1">"'+data.intro+'"</p></div><div class="space-y-3">';
-    data.days.forEach(function(day){
-      html+='<div class="bg-gray-900/40 p-4 rounded-xl border border-gray-700/60 day-card hidden" data-plan-id="'+planId+'" data-day="'+day.day_number+'" data-motivation="'+day.motivation+'">';
-      html+='<div class="flex justify-between items-center mb-2 gap-2 flex-col md:flex-row"><h4 class="font-bold text-white text-sm flex items-center gap-2"><span class="bg-eva-blue text-white text-xs px-2 py-0.5 rounded day-badge">Ngay '+day.day_number+'</span> '+day.name+'</h4><span class="text-[10px] font-semibold text-eva-blue px-2 py-1 rounded bg-eva-blue/10 border border-eva-blue/30 status-text">Dang hoc Ly thuyet</span></div>';
-      html+='<p class="text-xs text-gray-400 mb-3">'+day.action+'</p>';
-      html+='<div class="step-theory flex flex-col sm:flex-row gap-2"><button onclick="startPhase(\'theory\',\''+day.focus+'\',\''+planId+'\',this)" class="flex-1 bg-eva-blue/10 hover:bg-eva-blue/30 border border-eva-blue/40 text-blue-300 py-2 rounded-lg text-xs font-semibold transition-colors"><span class="btn-text">Bat dau Ly Thuyet</span></button><button onclick="completeTheory(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">Xong Ly Thuyet</button></div>';
-      html+='<div class="step-exercise hidden flex-col sm:flex-row gap-2 mt-2"><button onclick="startPhase(\'exercise\',\''+day.focus+'\',\''+planId+'\')" class="flex-1 bg-eva-purple/10 hover:bg-eva-purple/30 border border-eva-purple/40 text-purple-300 py-2 rounded-lg text-xs font-semibold">Luyen Bai Tap</button><button onclick="completeDay(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">Hoan Thanh Ngay</button></div>';
-      html+='</div>';
-    });
-    html+='</div></div>';
+    roadmapPlans[planId]={subject:currentSubject,goal:goal,data:data,roadmapId:"",progress:null};
+    ensurePlanProgress(planId);
     document.getElementById("plan-loading").classList.add("hidden");
-    var nd=document.createElement("div");nd.innerHTML=html;document.getElementById("plans-container").prepend(nd);
+    document.getElementById("plans-container").innerHTML='';
+    rerenderPlan(planId);
+    const ownerId = getRoadmapOwnerId(ctx);
+    if (ownerId) {
+      try {
+        const saveRes = await fetchRoadmapApi({
+          action: 'save_student_roadmap',
+          student_id: ownerId,
+          user_id: ownerId,
+          class_id: '',
+          subject: currentSubject,
+          goal: goal,
+          roadmap_json: JSON.stringify(data),
+          status: 'active'
+        });
+        if (saveRes?.roadmap?.roadmap_id) roadmapPlans[planId].roadmapId = saveRes.roadmap.roadmap_id;
+      } catch (saveErr) {
+        console.warn('save_student_roadmap failed', saveErr);
+      }
+    }
     saveRoadmapState();
-    showCustomAlert("Ke hoach da duoc tao!","Thanh cong");
-  }catch(e){document.getElementById("plan-loading").classList.add("hidden");showCustomAlert("Loi tao ke hoach. Thu lai nhe!");}
+    showCustomAlert("Kế hoạch đã được tạo!","Thành công");
+  }catch(e){document.getElementById("plan-loading").classList.add("hidden");showCustomAlert("Lỗi tạo kế hoạch. Thử lại nhé!");}
   btn.innerHTML=ot;btn.disabled=false;
 }
 function removePlan(id){
-  showCustomAlert("Ban co muon xoa ke hoach nay?","Xoa ke hoach",true,function(){
-    delete activeDays[id];delete chatSubjects[id];delete chatHistories[id];delete chatCustomNames[id];
+  showCustomAlert("Bạn có muốn xóa kế hoạch này?","Xóa kế hoạch",true,function(){
+    delete activeDays[id];delete chatSubjects[id];delete chatHistories[id];delete chatCustomNames[id];delete roadmapPlans[id];
     var el=document.getElementById(id);if(el){var p=el.closest("div");if(p)p.remove();}
     var cc=document.getElementById("chat-container-"+id);if(cc)cc.remove();
     if(currentChatId===id)switchChatContext("default");updateSidebarHistory();
+    updateProgressRing();
+    saveRoadmapState();
   });
 }
 function completeTheory(btn){
   var card=btn.closest(".day-card");if(!card)return;
-  var st=card.querySelector(".status-text");if(st){st.innerText="Dang giai Bai tap";st.className="text-xs font-semibold text-eva-purple px-2 py-1 rounded bg-eva-purple/10 border border-eva-purple/30 status-text";}
-  var ts=card.querySelector(".step-theory");if(ts)ts.innerHTML='<div class="flex-1 bg-green-900/20 border border-green-500/30 text-green-400 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">✓ Da hoan thanh Ly thuyet</div>';
+  var planId=card.getAttribute("data-plan-id"),dayNum=card.getAttribute("data-day");
+  var progress=ensurePlanProgress(planId);if(progress&&progress.days&&progress.days[dayNum])progress.days[dayNum].theoryDone=true;
+  var st=card.querySelector(".status-text");if(st){st.innerText="Đang giải Bài tập";st.className="text-xs font-semibold text-eva-purple px-2 py-1 rounded bg-eva-purple/10 border border-eva-purple/30 status-text";}
+  var ts=card.querySelector(".step-theory");if(ts)ts.innerHTML='<div class="flex-1 bg-green-900/20 border border-green-500/30 text-green-400 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">✓ Đã hoàn thành Lý thuyết</div>';
   var ex=card.querySelector(".step-exercise");if(ex){ex.classList.remove("hidden");ex.classList.add("flex");}
+  saveRoadmapState();
+  refreshRadarFromProgress();
 }
 function completeDay(btn){
   var card=btn.closest(".day-card");if(!card)return;
   var planId=card.getAttribute("data-plan-id");
+  var dayNumStr=card.getAttribute("data-day");
+  if(!allChecklistDone(planId, dayNumStr)){showCustomAlert("Hãy tick hết checklist của ngày này trước khi hoàn thành.","Chưa xong checklist");return;}
+  var progress=ensurePlanProgress(planId);if(progress&&progress.days&&progress.days[dayNumStr])progress.days[dayNumStr].completed=true;
   card.classList.add("border-green-500/50","bg-green-900/10");
-  var st=card.querySelector(".status-text");if(st){st.innerText="✨ "+(card.getAttribute("data-motivation")||"Tuyet voi!");st.className="text-xs font-bold text-green-400 px-3 py-2 rounded bg-green-900/20 border border-green-500/50 status-text";}
-  var ex=card.querySelector(".step-exercise");if(ex)ex.innerHTML='<div class="flex-1 bg-green-900/20 border border-green-500/30 text-green-400 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">✓ Da ket thuc ngay hoc</div>';
+  var st=card.querySelector(".status-text");if(st){st.innerText="✨ "+(card.getAttribute("data-motivation")||"Tuyệt vời!");st.className="text-xs font-bold text-green-400 px-3 py-2 rounded bg-green-900/20 border border-green-500/50 status-text";}
+  var ex=card.querySelector(".step-exercise");if(ex)ex.innerHTML='<div class="flex-1 bg-green-900/20 border border-green-500/30 text-green-400 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">✓ Đã kết thúc ngày học</div>';
   var dn=parseInt(card.getAttribute("data-day"));
   if(!isNaN(dn)){
     var flameEl=document.querySelector('[id="'+planId+'"] .streak-day[data-day-index="'+(dn-1)+'"]');
-    if(flameEl){var f=flameEl.querySelector(".flame-icon");f.classList.remove("grayscale","opacity-40","brightness-200");f.classList.add("scale-125");setTimeout(function(){f.classList.remove("scale-125");},300);}
+    if(flameEl){var f=flameEl.querySelector(".flame-icon");f.classList.remove("grayscale","opacity-40","brightness-200");f.classList.add("scale-125","pulse-flame");setTimeout(function(){f.classList.remove("scale-125");},300);}
     var nextBtn=document.querySelector('[id="'+planId+'"] .streak-next-text');
-    if(nextBtn){if(dn<7){activeDays[planId]=dn+1;nextBtn.innerHTML="Tiep tuc ngay "+activeDays[planId]+" ▶";}else{nextBtn.innerText="Hoan thanh! 🎉";nextBtn.onclick=null;}}
+    if(nextBtn){if(dn<7){activeDays[planId]=dn+1;nextBtn.innerHTML="Tiếp tục ngày "+activeDays[planId]+" ▶";}else{activeDays[planId]=8;nextBtn.innerText="Mở post-test";nextBtn.onclick=function(){startPlanAssessment(planId,'posttest');};}}
+    if(typeof confetti === 'function') confetti({particleCount: 100, spread: 70, origin: { y: 0.6 }});
+    updateProgressRing();
   saveRoadmapState();
   }
 }
 function revealNextDay(planId){
+  const plan=roadmapPlans[planId];
+  if(plan&&plan.data&&Array.isArray(plan.data.pretest)&&plan.data.pretest.length){
+    const progress=ensurePlanProgress(planId);
+    if(progress&&!progress.pretest.completed){startPlanAssessment(planId,'pretest');return;}
+  }
   var cur=activeDays[planId];
+  if(cur===8){startPlanAssessment(planId,'posttest');return;}
   var card=document.querySelector(".day-card[data-plan-id='"+planId+"'][data-day='"+cur+"']");
-  if(card){card.classList.remove("hidden");card.scrollIntoView({behavior:"smooth",block:"center"});}
+  if(card){card.classList.remove("hidden");card.classList.add("slide-up");card.scrollIntoView({behavior:"smooth",block:"center"});}
+}
+async function regeneratePlanDay(planId, dayNumber){
+  const plan=roadmapPlans[planId];
+  if(!plan)return;
+  const ctx=getRoadmapContext();
+  const day=plan.data.days.find(function(item){return Number(item.day_number)===Number(dayNumber);});
+  if(!day)return;
+  const research=await fetchTavilyResearch("goi y noi dung hoc "+(plan.subject||currentSubject)+" ngay "+dayNumber+" cho "+(ctx.grade_level||"hoc sinh")+", muc tieu "+plan.goal,{topic:"general",searchDepth:"advanced",maxResults:3,includeDomains:["moet.gov.vn","khanacademy.org","coursera.org"]});
+  const prompt="Ban la EVA. Hay tao lai DUY NHAT ngay hoc so "+dayNumber+" cho roadmap mon "+plan.subject+", muc tieu "+plan.goal+". Gioi han theo "+(ctx.grade_level||"muc do hoc sinh hien tai")+". Day cu hien tai: "+JSON.stringify(day)+buildResearchPromptBlock(research)+"\nTra ve JSON object: {\"day_number\":"+dayNumber+",\"name\":\"...\",\"focus\":\"...\",\"action\":\"...\",\"motivation\":\"...\",\"checklist\":[\"viec 1\",\"viec 2\",\"viec 3\"]}";
+  try{
+    const res=await fetchGeminiAPI({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}});
+    const newDay=normalizePlanData({days:[JSON.parse(res)]}).days[0];
+    const idx=plan.data.days.findIndex(function(item){return Number(item.day_number)===Number(dayNumber);});
+    if(idx<0)return;
+    plan.data.days[idx]=newDay;
+    if(plan.progress&&plan.progress.days){
+      plan.progress.days[String(dayNumber)]={checklist:newDay.checklist.map(function(){return false;}),theoryDone:false,completed:false};
+    }
+    rerenderPlan(planId);
+    const ownerId=getRoadmapOwnerId(ctx);
+    if(ownerId){
+      try{
+        await fetchRoadmapApi({action:'save_student_roadmap',student_id:ownerId,user_id:ownerId,class_id:'',subject:plan.subject,goal:plan.goal,roadmap_json:JSON.stringify(plan.data),status:'active'});
+      }catch(saveErr){console.warn('save regenerated roadmap failed',saveErr);}
+    }
+    showCustomAlert("Da tao lai noi dung cho ngay "+dayNumber+".","Thanh cong");
+  }catch(e){
+    showCustomAlert("Không tạo lại được ngày học này.","Lỗi");
+  }
 }
 function switchTab(n){
   document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.remove("active","bg-eva-blue/20","text-eva-neon");});
   var ab=document.getElementById("btn-"+n);if(ab)ab.classList.add("active","bg-eva-blue/20","text-eva-neon");
   document.querySelectorAll(".tab-content").forEach(function(c){c.classList.remove("active");});
   var at=document.getElementById("tab-"+n);if(at)at.classList.add("active");
-  var titles={theory:"Cuoc Tro Chuyen Moi",exercise:"Ren Luyen Phan Xa",profile:"Ho so: DAU VAN TAY TU DUY"};
+  var titles={theory:"Cuộc Trò Chuyện Mới",exercise:"Rèn Luyện Phản Xạ",profile:"Hồ sơ: DẤU VÂN TAY TƯ DUY"};
   document.getElementById("header-title").innerText=titles[n]||"EVA";
   if(n==="profile"&&!window.chartInitialized){initRadarChart([0,0,0,0,0]);window.chartInitialized=true;}
 }
 function initRadarChart(data){
   var ctx=document.getElementById("radarChart");if(!ctx)return;
   if(radarChartInstance)radarChartInstance.destroy();
-  radarChartInstance=new Chart(ctx,{type:"radar",data:{labels:["Ly thuyet","Phan bien","Van dung","Toc do","Sang tao"],datasets:[{data:data,backgroundColor:"rgba(59,130,246,0.4)",borderColor:"#60a5fa",borderWidth:2}]},options:{scales:{r:{min:0,max:100,ticks:{display:false}}},plugins:{legend:{display:false}}}});
+  radarChartInstance=new Chart(ctx,{type:"radar",data:{labels:["Lý thuyết nền","Tư duy","Phản biện","Vận dụng","Vận dụng cao"],datasets:[{data:data,backgroundColor:"rgba(59,130,246,0.4)",borderColor:"#60a5fa",borderWidth:2}]},options:{scales:{r:{min:0,max:100,ticks:{display:false}}},plugins:{legend:{display:false}}}});
 }
 function switchProfileSubTab(name){
   document.getElementById("sub-hoso").classList.toggle("hidden",name!=="hoso");
   document.getElementById("sub-kehoach").classList.toggle("hidden",name!=="kehoach");
   document.getElementById("btn-sub-hoso").className=name==="hoso"?"px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md":"px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white";
   document.getElementById("btn-sub-kehoach").className=name==="kehoach"?"px-6 py-2 rounded-full text-sm font-medium transition-all bg-eva-blue text-white shadow-md":"px-6 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white";
+  if(name==="hoso" || name==="kehoach") setTimeout(()=>syncRoadmapData(true), 0);
 }
+</script>
+<script>
+// ===== EVA ROADMAP LIVE LAYER =====
+(function() {
+  const EVA_RM_EXAM_TARGETS = { "2026": "2026-06-11" };
+  const _normalizePlanDataBase = normalizePlanData;
+  const _ensurePlanProgressBase = ensurePlanProgress;
+  const _rerenderPlanBase = rerenderPlan;
+  const _renderStoredPlansBase = renderStoredPlans;
+  const _renderRoadmapFromApiBase = renderRoadmapFromApi;
+
+  function rmDateKey(date) {
+    const d = date instanceof Date ? date : new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function rmParseDate(value) {
+    const safe = norm_(value);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(safe)) return new Date();
+    const parts = safe.split("-").map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+  }
+
+  function rmAddDays(date, days) {
+    const next = new Date(date.getTime());
+    next.setDate(next.getDate() + Number(days || 0));
+    return next;
+  }
+
+  function rmWeekday(date) {
+    return ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][date.getDay()] || "T?";
+  }
+
+  function rmDateLabel(date) {
+    return String(date.getDate()).padStart(2, "0") + "/" + String(date.getMonth() + 1).padStart(2, "0");
+  }
+
+  function rmRelativeLabel(date) {
+    const today = rmDateKey(new Date());
+    const tomorrow = rmDateKey(rmAddDays(new Date(), 1));
+    const target = rmDateKey(date);
+    if (target === today) return "Hom nay";
+    if (target === tomorrow) return "Ngay mai";
+    return rmWeekday(date);
+  }
+
+  function rmIsGrade12() {
+    const grade = norm_(getRoadmapContext()?.grade_level || "");
+    return /(^|[^0-9])12([^0-9]|$)/.test(grade);
+  }
+
+  function rmCountdownTargetKey() {
+    const year = String(new Date().getFullYear());
+    return EVA_RM_EXAM_TARGETS[year] || (year + "-06-11");
+  }
+
+  function rmCountdownHtml() {
+    if (!rmIsGrade12()) return "";
+    const target = rmCountdownTargetKey();
+    return '' +
+      '<div class="mb-4 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 p-4">' +
+        '<div class="flex items-start justify-between gap-3 flex-wrap">' +
+          '<div>' +
+            '<div class="text-[11px] uppercase tracking-[0.18em] font-bold text-amber-300">Countdown tot nghiep THPT</div>' +
+            '<div class="text-sm text-white font-semibold mt-1">Moc thi du kien: ' + target.split("-").reverse().join("/") + '</div>' +
+          '</div>' +
+          '<div class="exam-countdown text-right" data-target="' + target + '">' +
+            '<div class="text-xl font-black text-amber-200">Dang tinh...</div>' +
+            '<div class="text-[11px] text-amber-100/80 mt-1">Cap nhat theo gio may</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function rmMascotHtml(planId, data) {
+    const progress = ensurePlanProgress(planId);
+    const days = Array.isArray(data?.days) ? data.days : [];
+    const completed = days.filter(function(day) {
+      return progress?.days?.[String(day.day_number)]?.completed === true;
+    }).length;
+    const total = days.length || 1;
+    const ratio = completed / total;
+    let icon = "🌙";
+    let title = "EVA dang dong hanh";
+    let body = "Minh di tung ngay mot. Khi ban hoc deu, EVA se nang dan nhiet va do kho.";
+    let tone = "from-slate-500/15 to-slate-700/10 border-slate-400/20 text-slate-100";
+
+    if (completed >= total && total > 0) {
+      icon = "🏆";
+      title = "EVA khen ban hom nay";
+      body = "Ban da di tron lo trinh hien tai. Co the mo bai tong hop hoac nang muc tieu tiep.";
+      tone = "from-emerald-500/20 to-green-500/10 border-emerald-400/30 text-emerald-100";
+    } else if (ratio >= 0.6) {
+      icon = "✨";
+      title = "Nhip hoc dang rat on";
+      body = "Ban dang vao form. EVA co the day nhanh hon mot chut o nhung ngay toi.";
+      tone = "from-violet-500/20 to-fuchsia-500/10 border-violet-400/30 text-violet-100";
+    } else if (completed >= 2) {
+      icon = "🔥";
+      title = "Tien bo dang ro";
+      body = "Ban da vuot qua giai doan khoi dong. Cu giu nhip nay, EVA se tiep tuc dan duong.";
+      tone = "from-orange-500/20 to-amber-500/10 border-orange-400/30 text-orange-100";
+    }
+
+    return '' +
+      '<div class="mb-4 rounded-2xl border bg-gradient-to-r ' + tone + ' p-4">' +
+        '<div class="flex items-start gap-3">' +
+          '<div class="w-12 h-12 rounded-2xl bg-black/20 border border-white/10 flex items-center justify-center text-2xl shrink-0">' + icon + '</div>' +
+          '<div class="min-w-0">' +
+            '<div class="text-sm font-bold text-white">' + title + '</div>' +
+            '<div class="text-xs mt-1 leading-6 text-white/80">' + body + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function rmRefreshCountdowns() {
+    document.querySelectorAll(".exam-countdown[data-target]").forEach(function(node) {
+      const raw = norm_(node.getAttribute("data-target"));
+      const base = rmParseDate(raw);
+      const target = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 7, 0, 0, 0);
+      const diff = target.getTime() - Date.now();
+      if (diff <= 0) {
+        node.innerHTML = '<div class="text-xl font-black text-amber-200">Den ngay thi roi</div><div class="text-[11px] text-amber-100/80 mt-1">Giu binh tinh va lam bai chac nhe.</div>';
+        return;
+      }
+      const totalSeconds = Math.floor(diff / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      node.innerHTML =
+        '<div class="text-xl font-black text-amber-200">' + days + ' ngay</div>' +
+        '<div class="text-[11px] text-amber-100/85 mt-1">' +
+          String(hours).padStart(2, "0") + 'h ' +
+          String(minutes).padStart(2, "0") + 'm ' +
+          String(seconds).padStart(2, "0") + 's</div>';
+    });
+  }
+
+  normalizePlanData = function(data) {
+    const safe = data && typeof data === "object" ? data : {};
+    const normalized = _normalizePlanDataBase(safe);
+    const startDateKey = norm_(safe.start_date || normalized.start_date) || rmDateKey(new Date());
+    const startDate = rmParseDate(startDateKey);
+    normalized.start_date = startDateKey;
+    normalized.days = (normalized.days || []).map(function(day, index) {
+      const dayDate = rmParseDate(norm_(day.calendar_date) || rmDateKey(rmAddDays(startDate, index)));
+      return {
+        ...day,
+        calendar_date: rmDateKey(dayDate),
+        weekday_label: norm_(day.weekday_label) || rmWeekday(dayDate),
+        relative_label: norm_(day.relative_label) || rmRelativeLabel(dayDate)
+      };
+    });
+    return normalized;
+  };
+
+  ensurePlanProgress = function(planId) {
+    const plan = roadmapPlans[planId];
+    if (plan) plan.data = normalizePlanData(plan.data);
+    return _ensurePlanProgressBase(planId);
+  };
+
+  rerenderPlan = function(planId) {
+    _rerenderPlanBase(planId);
+    rmRefreshCountdowns();
+  };
+
+  renderStoredPlans = function() {
+    _renderStoredPlansBase();
+    rmRefreshCountdowns();
+  };
+
+  renderRoadmapFromApi = function(roadmap) {
+    _renderRoadmapFromApiBase(roadmap);
+    rmRefreshCountdowns();
+  };
+
+  renderRoadmapCards = function(planId, subject, goal, data) {
+    data = normalizePlanData(data);
+    const progress = ensurePlanProgress(planId);
+    const nextDay = activeDays[planId] || 1;
+    const pretestPending = (data.pretest || []).length && !progress?.pretest?.completed;
+    const nextDayMeta = (data.days || []).find(function(day) { return Number(day.day_number) === Number(nextDay); });
+    const nextButtonText = pretestPending
+      ? "Lam pre-test"
+      : (nextDay === 8 ? "Mo post-test" : ("Tiep tuc " + (nextDayMeta?.relative_label || ("ngay " + nextDay)) + " ▶"));
+    let html = '<div id="' + planId + '" class="bg-eva-panel/80 border border-eva-border rounded-2xl p-4 md:p-5 text-sm text-gray-200 shadow-xl mb-6 relative group overflow-hidden"><button onclick="removePlan(\'' + planId + '\')" class="absolute top-3 right-3 text-gray-500 hover:text-red-400 bg-gray-800 w-7 h-7 flex items-center justify-center rounded-full z-10 opacity-0 group-hover:opacity-100">x</button>';
+    html += '<div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-5 mb-5 shadow-xl relative overflow-hidden border border-white/10"><div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div><div class="flex items-center gap-3 mb-5 flex-wrap relative z-10"><h2 class="text-3xl font-black tracking-tight">' + subject + '</h2><span class="text-xs font-semibold bg-white/20 px-3 py-1.5 rounded-full border border-white/30">' + goal + '</span></div>';
+    html += '<div class="flex justify-between items-end mb-4 px-1 relative z-10"><span class="text-2xl font-bold flex items-center gap-1.5">🔥 Chuoi</span><button onclick="revealNextDay(\'' + planId + '\')" class="text-xs font-bold bg-white text-purple-600 hover:bg-blue-50 px-4 py-2 rounded-full transition-all streak-next-text">' + nextButtonText + '</button></div>';
+    html += '<div class="flex justify-between items-center w-full mt-2 px-1 relative z-10">';
+    (data.days || []).slice(0, 7).forEach(function(day, idx) {
+      html += '<div class="flex flex-col items-center gap-1.5 streak-day w-full" data-day-index="' + idx + '">' +
+        '<span class="text-2xl flame-icon grayscale opacity-40 brightness-200 transition-all inline-block cursor-default">🔥</span>' +
+        '<span class="text-[10px] font-semibold text-white/90">' + (day.weekday_label || ("T" + (idx + 2))) + '</span>' +
+        '<span class="text-[10px] text-white/60">' + rmDateLabel(rmParseDate(day.calendar_date)) + '</span>' +
+      '</div>';
+    });
+    html += '</div></div>';
+    html += rmCountdownHtml();
+    html += rmMascotHtml(planId, data);
+    html += '<div class="flex items-start gap-3 mb-4 px-2"><p class="text-sm text-gray-300 italic leading-relaxed pt-1">"' + (data.intro || 'Lo trinh duoc EVA ca nhan hoa cho ban.') + '"</p></div>';
+    html += renderAssessmentSummary(planId, 'pretest', 'Bai kiem tra dau vao');
+    html += renderAssessmentSummary(planId, 'posttest', 'Bai kiem tra tong ket');
+    html += '<div class="space-y-3">';
+    (data.days || []).forEach(function(day) {
+      const dayProgress = progress?.days?.[String(day.day_number)] || { completed: false, theoryDone: false, checklist: [] };
+      const isVisible = Number(day.day_number) <= nextDay;
+      const statusText = dayProgress.completed ? ('✨ ' + (day.motivation || 'Tuyet voi!')) : (dayProgress.theoryDone ? 'Dang giai bai tap' : 'Dang hoc ly thuyet');
+      const statusClass = dayProgress.completed
+        ? 'text-[10px] font-bold text-green-400 px-3 py-2 rounded bg-green-900/20 border border-green-500/50 status-text'
+        : dayProgress.theoryDone
+          ? 'text-[10px] font-semibold text-eva-purple px-2 py-1 rounded bg-eva-purple/10 border border-eva-purple/30 status-text'
+          : 'text-[10px] font-semibold text-eva-blue px-2 py-1 rounded bg-eva-blue/10 border border-eva-blue/30 status-text';
+      const badgeText = (day.relative_label || ("Ngay " + day.day_number)) + " • " + (day.weekday_label || "") + " • " + rmDateLabel(rmParseDate(day.calendar_date));
+      html += '<div class="bg-gray-900/40 p-4 rounded-xl border border-gray-700/60 day-card ' + (isVisible ? '' : 'hidden') + ' ' + (dayProgress.completed ? 'border-green-500/50 bg-green-900/10' : '') + '" data-plan-id="' + planId + '" data-day="' + day.day_number + '" data-motivation="' + (day.motivation || '') + '">';
+      html += '<div class="flex justify-between items-center mb-2 gap-2 flex-col md:flex-row"><h4 class="font-bold text-white text-sm flex items-center gap-2"><span class="bg-eva-blue text-white text-[10px] px-2.5 py-1 rounded-full day-badge">' + badgeText + '</span> ' + day.name + '</h4><div class="flex items-center gap-2"><button onclick="regeneratePlanDay(\'' + planId + '\',' + day.day_number + ')" class="text-[10px] font-semibold px-2 py-1 rounded bg-orange-500/10 border border-orange-400/30 text-orange-300 hover:bg-orange-500/20">Tao lai ngay</button><span class="' + statusClass + '">' + statusText + '</span></div></div>';
+      html += '<p class="text-xs text-gray-400 mb-3">' + (day.action || '') + '</p>';
+      html += '<div class="mb-3 space-y-2">' + renderChecklistHtml(planId, day) + '</div>';
+      html += '<div class="step-theory flex flex-col sm:flex-row gap-2"><button onclick="startPhase(\'theory\',\'' + String(day.focus || '').replace(/'/g, "\\'") + '\',\'' + planId + '\',this)" class="flex-1 bg-eva-blue/10 hover:bg-eva-blue/30 border border-eva-blue/40 text-blue-300 py-2 rounded-lg text-xs font-semibold transition-colors"><span class="btn-text">' + (dayProgress.theoryDone ? 'Tiep tuc Ly Thuyet' : 'Bat dau Ly Thuyet') + '</span></button><button onclick="completeTheory(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">' + (dayProgress.theoryDone ? 'Da xong Ly Thuyet' : 'Xong Ly Thuyet') + '</button></div>';
+      html += '<div class="step-exercise ' + (dayProgress.theoryDone || dayProgress.completed ? 'flex' : 'hidden') + ' flex-col sm:flex-row gap-2 mt-2"><button onclick="startPhase(\'exercise\',\'' + String(day.focus || '').replace(/'/g, "\\'") + '\',\'' + planId + '\')" class="flex-1 bg-eva-purple/10 hover:bg-eva-purple/30 border border-eva-purple/40 text-purple-300 py-2 rounded-lg text-xs font-semibold">Luyen Bai Tap</button><button onclick="completeDay(this)" class="flex-1 bg-gray-800/80 hover:bg-green-900/40 border border-gray-600 hover:border-green-500/50 text-gray-400 hover:text-green-400 py-2 rounded-lg text-xs font-semibold">' + (dayProgress.completed ? 'Da ket thuc ngay hoc' : 'Hoan Thanh Ngay') + '</button></div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  };
+
+  completeDay = function(btn) {
+    var card = btn.closest(".day-card");
+    if (!card) return;
+    var planId = card.getAttribute("data-plan-id");
+    var dayNumStr = card.getAttribute("data-day");
+    if (!allChecklistDone(planId, dayNumStr)) {
+      showCustomAlert("Hay tick het checklist cua ngay nay truoc khi hoan thanh.", "Chua xong checklist");
+      return;
+    }
+    var progress = ensurePlanProgress(planId);
+    if (progress && progress.days && progress.days[dayNumStr]) progress.days[dayNumStr].completed = true;
+    var dn = parseInt(dayNumStr, 10);
+    if (!isNaN(dn)) {
+      if (dn < 7) activeDays[planId] = Math.max(activeDays[planId] || 1, dn + 1);
+      else activeDays[planId] = 8;
+    }
+    if (typeof confetti === "function") confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    updateProgressRing();
+    saveRoadmapState();
+    refreshRadarFromProgress();
+    rerenderPlan(planId);
+  };
+
+  document.addEventListener("DOMContentLoaded", function() {
+    rmRefreshCountdowns();
+  });
+})();
 </script>
 </body>
 </html>

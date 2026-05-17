@@ -25,12 +25,12 @@
     let s = String(input || '');
     if (!s) return s;
     s = s
-      .replace(/â€¢/g, '•')
-      .replace(/â€“/g, '–')
-      .replace(/â€”/g, '—')
-      .replace(/â€¦/g, '…')
+      .replace(/•/g, '•')
+      .replace(/–/g, '–')
+      .replace(/—/g, '—')
+      .replace(/…/g, '…')
       .replace(/â€˜|â€™/g, "'")
-      .replace(/â€œ|â€�/g, '"');
+      .replace(/“|â€�/g, '"');
     if (/[ÃÂÄÅÆÐ]/.test(s)) {
       try {
         const fixed = decodeURIComponent(escape(s));
